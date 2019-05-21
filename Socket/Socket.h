@@ -33,7 +33,7 @@ class Socket {
   byte recvLimit;
   uint16_t sourceAddress;
   byte *send_buffer;
-  byte send_data_size;
+  uint16_t send_data_size;
 };
 
 /*

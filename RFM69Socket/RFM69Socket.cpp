@@ -87,7 +87,7 @@ byte *RFM69Socket::initBuffer(byte *data, uint16_t data_size) {
     DEBUG_ERR("sndbuf too big");
     DEBUG_ERR_STATE(RFM_OVERSIZED_SEND_BUFFER);
   }
-  send_data_size = data_size;
+  send_data_size = data_size - sizeof (rfm69_socket_hdr_t);
   send_buffer = data + sizeof (rfm69_socket_hdr_t);
   return send_buffer;
 }

@@ -177,7 +177,7 @@ int RS485Socket::serialAvailable()
 byte * RS485Socket::initBuffer(byte * data, uint16_t data_size) 
 {
   DEBUG4_VALUELN("initBuffer: size:", data_size);
-  send_data_size = data_size; // XXX?
+  send_data_size = data_size - sizeof (rs485_socket_hdr_t);
   send_buffer = data + sizeof (rs485_socket_hdr_t);
   return send_buffer;
 }

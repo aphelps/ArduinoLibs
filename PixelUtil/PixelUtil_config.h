@@ -102,6 +102,12 @@
 #define PIXELS_CLOCK 8
 #endif
 
+#ifdef PIXELS_APA102_6_9
+#define PIXELS_TYPE PIXELS_TYPE_APA102
+#define PIXELS_DATA 6
+#define PIXELS_CLOCK 9
+#endif
+
 #ifdef PIXELS_APA102_9_6
 #define PIXELS_TYPE PIXELS_TYPE_APA102
 #define PIXELS_DATA 9
@@ -175,7 +181,7 @@
 #elif PIXELS_TYPE == PIXELS_TYPE_APA102
   #define PIXELS_LED_TYPE APA102
   #define PIXELS_PINS 2
-  #define PIXELS_ORDER GBR
+  #define PIXELS_ORDER BGR // TODO: There may be different orderings
   #define PIXELS_CORRECTION TypicalSMD5050
 #elif PIXELS_TYPE == PIXELS_TYPE_WS2801
   #define PIXELS_LED_TYPE WS2801
