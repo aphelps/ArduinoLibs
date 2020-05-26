@@ -8,10 +8,11 @@
  * This header uses compiler flags to define the LED type and pins.
  *
  * There are two methods of setting the flags with compiler flags:
- *   - Specifying the type, data, and clock pins, ie:
+ *   - Specifying the type, data, clock pins, and optional data rate ie:
  *     * -DPIXELS_TYPE=PIXELS_TYPE_WS2812B -DPIXELS_DATA=10 -DPIXELS_CLOCK=6
  *   - Using an alias, which must be explicitly listed in this file
  *     * -DPIXELS_APA102_7_8
+ *
  * License: Create Commons Attribution-Share-Alike
  * Copyright: 2018
 */
@@ -27,16 +28,34 @@
     FastLED.addLeds<type, order>(leds, num_pixels); \
   }
 
+#define PIXELS_DEFINE0_RATE(type, order, rate) \
+  { \
+    initialized = true; \
+    FastLED.addLeds<type, order, DATA_RATE_MHZ(rate)>(leds, num_pixels); \
+  }
+
 #define PIXELS_DEFINE1(type, data, order) \
   if (dataPin == data) { \
     initialized = true; \
     FastLED.addLeds<type, data, order>(leds, num_pixels); \
   }
 
+#define PIXELS_DEFINE1_RATE(type, data, order, rate) \
+  if (dataPin == data) { \
+    initialized = true; \
+    FastLED.addLeds<type, data, order, DATA_RATE_MHZ(rate)>(leds, num_pixels); \
+  }
+
 #define PIXELS_DEFINE2(type, data, clock, order) \
   if ((dataPin == data) && (clockPin == clock)) { \
     initialized = true; \
     FastLED.addLeds<type, data, clock, order>(leds, num_pixels); \
+  }
+
+#define PIXELS_DEFINE2_RATE(type, data, clock, order, rate) \
+  if ((dataPin == data) && (clockPin == clock)) { \
+    initialized = true; \
+    FastLED.addLeds<type, data, clock, order, DATA_RATE_MHZ(rate)>(leds, num_pixels); \
   }
 
 
@@ -199,12 +218,25 @@
 #ifndef PIXELS_DATA
   /* If no data pin specified then use SPI */
   #warning USING SPI // TODO: Remove
-  #define PIXELS_ADD() PIXELS_DEFINE0(PIXELS_LED_TYPE, PIXELS_ORDER)
+  #ifdef PIXEL_DATA_RATE
+    #define PIXELS_ADD() PIXELS_DEFINE0_RATE(PIXELS_LED_TYPE, PIXELS_ORDER, PIXEL_DATA_RATE)
+  #else
+    #define PIXELS_ADD() PIXELS_DEFINE0(PIXELS_LED_TYPE, PIXELS_ORDER)
+  #endif
+
 #else
   #if PIXELS_PINS == 1
-    #define PIXELS_ADD() PIXELS_DEFINE1(PIXELS_LED_TYPE, PIXELS_DATA, PIXELS_ORDER)
+    #ifdef PIXEL_DATA_RATE
+      #define PIXELS_ADD() PIXELS_DEFINE1_RATE(PIXELS_LED_TYPE, PIXELS_DATA, PIXELS_ORDER, PIXEL_DATA_RATE)
+    #else
+      #define PIXELS_ADD() PIXELS_DEFINE1(PIXELS_LED_TYPE, PIXELS_DATA, PIXELS_ORDER)
+    #endif
   #else
-    #define PIXELS_ADD() PIXELS_DEFINE2(PIXELS_LED_TYPE, PIXELS_DATA, PIXELS_CLOCK, PIXELS_ORDER)
+    #ifdef PIXEL_DATA_RATE
+      #define PIXELS_ADD() PIXELS_DEFINE2_RATE(PIXELS_LED_TYPE, PIXELS_DATA, PIXELS_CLOCK, PIXELS_ORDER, PIXEL_DATA_RATE)
+    #else
+      #define PIXELS_ADD() PIXELS_DEFINE2(PIXELS_LED_TYPE, PIXELS_DATA, PIXELS_CLOCK, PIXELS_ORDER)
+    #endif
   #endif
 #endif
 

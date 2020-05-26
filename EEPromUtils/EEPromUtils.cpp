@@ -17,6 +17,7 @@
  * default returns zero.  We correct that here by defining E2END to be the size
  * of the sector that is reserved for the EEPROM shim.
  */
+  #include <esp_spi_flash.h>
   #define E2END SPI_FLASH_SEC_SIZE
 #endif
 
@@ -156,6 +157,8 @@ int EEPROM_safe_write(int location, uint8_t *data, int datalen) {
   DEBUG4_VALUE(" all=", location - start);
   DEBUG4_VALUE(" ret=", location);
   DEBUG4_VALUELN(" diffs=", wrote_count);
+
+  EEPROM_commit();
 
   return location;
 }
