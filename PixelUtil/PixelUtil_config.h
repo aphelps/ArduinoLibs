@@ -176,6 +176,18 @@
 #define PIXELS_CLOCK 20
 #endif
 
+#ifdef PIXELS_WS2801_25_23
+#define PIXELS_TYPE PIXELS_TYPE_WS2801
+#define PIXELS_DATA 25
+#define PIXELS_CLOCK 23
+#endif
+
+#ifdef PIXELS_WS2801_13_14 // ESP32 HSPI: MOSI=GPIO13, SCLK=GPIO14
+#define PIXELS_TYPE PIXELS_TYPE_WS2801
+#define PIXELS_DATA 13
+#define PIXELS_CLOCK 14
+#endif
+
 /*
  * Default for when no compiler flag, uses the pin configuration of the Adam's
  * original HMTL boards.

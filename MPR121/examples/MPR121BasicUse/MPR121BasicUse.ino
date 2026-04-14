@@ -21,26 +21,44 @@
 #include "MPR121.h"
 #include <Wire.h>
 
-#define I2C_ADDRESS 0x5A // 0x5A - 0x5D
-
-/*
- * Specify the IRQ pin the MPR121 is attached to if not specified in the
- * compiler environment.
- */
-#ifndef IRQ_PIN
-  #define IRQ_PIN 1
-  //#define IRQ_PIN 2
-  //#define IRQ_PIN 3
+// MPR121 I2C address: 0x5A (ADDR pin to GND), 0x5B (VDD), 0x5C (SDA), 0x5D (SCL)
+#ifndef I2C_ADDRESS
+  #define I2C_ADDRESS 0x5A
 #endif
 
-#define DEBUG_LED 13
+// Pin connected to MPR121 IRQ/interrupt output. Must be an interrupt-capable pin.
+// Override via build flag: -DIRQ_PIN=N
+#ifndef IRQ_PIN
+  #warning "IRQ_PIN not set via build flags, defaulting to 3"
+  #define IRQ_PIN 3
+#endif
+
+// On-board LED used to indicate touch state changes.
+// Override via build flag: -DDEBUG_LED=N  (ESP32 dev boards typically use 2)
+#ifndef DEBUG_LED
+  #define DEBUG_LED 13
+#endif
+
+// Serial baud rate. Override via build flag: -DSERIAL_BAUD=N
+#ifndef SERIAL_BAUD
+  #define SERIAL_BAUD 9600
+#endif
+
+// Touch/release detection thresholds (0–15).
+// Override via build flags: -DTOUCH_TRIGGER=N -DTOUCH_RELEASE=N
+#ifndef TOUCH_TRIGGER
+  #define TOUCH_TRIGGER 15
+#endif
+#ifndef TOUCH_RELEASE
+  #define TOUCH_RELEASE 2
+#endif
 
 MPR121 touch;
 
 byte mode = 0;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(SERIAL_BAUD);
 
   delay(2000); // Delay initialization
 
@@ -63,7 +81,7 @@ void setup() {
   /*
    * Set default touch and release thresholds
    */
-  touch.setThresholds(15,2);
+  touch.setThresholds(TOUCH_TRIGGER, TOUCH_RELEASE);
 
   Serial.println(F("MPR121 sensor initialized"));
 }
