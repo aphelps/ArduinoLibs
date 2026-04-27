@@ -44,6 +44,18 @@
   #define SERIAL_BAUD 9600
 #endif
 
+// I2C pins for ESP32. On standard ESP32 dev boards the defaults are SDA=21, SCL=22.
+// Override via build flags: -DI2C_SDA=N -DI2C_SCL=N
+// (Non-ESP32 boards use Wire.begin() with no args; hardware I2C pins are fixed.)
+#if defined(ARDUINO_ARCH_ESP32)
+  #ifndef I2C_SDA
+    #define I2C_SDA 21
+  #endif
+  #ifndef I2C_SCL
+    #define I2C_SCL 22
+  #endif
+#endif
+
 // Touch/release detection thresholds (0–15).
 // Override via build flags: -DTOUCH_TRIGGER=N -DTOUCH_RELEASE=N
 #ifndef TOUCH_TRIGGER
@@ -66,7 +78,15 @@ void setup() {
   Serial.print(F(" * IRQ Pin:"));
   Serial.println(IRQ_PIN);
 
+#if defined(ARDUINO_ARCH_ESP32)
+  Wire.begin(I2C_SDA, I2C_SCL);
+  Serial.print(F(" * I2C SDA:"));
+  Serial.print(I2C_SDA);
+  Serial.print(F(" SCL:"));
+  Serial.println(I2C_SCL);
+#else
   Wire.begin();
+#endif
 
   touch = MPR121(
                  IRQ_PIN,       // triggered/interupt pin
