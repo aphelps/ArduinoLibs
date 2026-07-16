@@ -276,8 +276,11 @@ void MPR121::setThresholds(byte trigger, byte release) {
   disable(); // Must be in stop mode to write to registers
   for (byte i = 0; i < MPR121::MAX_SENSORS; i++) {
     set_register(ELE0_T + 2 * i, trigger);
-    set_register(ELE1_T + 2 * i, release);
+    set_register(ELE0_R + 2 * i, release);
   }
+  // Proximity electrode (electrode 12) has separate registers
+  set_register(ELEPROX_T, trigger);
+  set_register(ELEPROX_R, release);
   enable(); // Return to previous config state
 }
 
