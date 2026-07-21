@@ -7,20 +7,22 @@
 #include "Debug.h"
 
 #include <RS485_non_blocking.h>
+#ifdef __AVR__
 #include <SoftwareSerial.h>
+#endif
 
 #include "Socket.h"
 #include "RS485Utils.h"
 
-// The following pins should be adjusted based on your setup
-#if 1
+// The following pins should be adjusted based on your setup, or passed via compiler flags
+#ifndef PIN_RS485_XMIT
 #define PIN_RS485_XMIT        7
+#endif
+#ifndef PIN_RS485_RECV
 #define PIN_RS485_RECV        4
+#endif
+#ifndef PIN_RS485_ENABLED
 #define PIN_RS485_ENABLED     2
-#else
-#define PIN_RS485_1     22 //2  22
-#define PIN_RS485_2     21 //7  21
-#define PIN_RS485_3     23 //4  23
 #endif
 
 #define DEBUG_PIN 13
