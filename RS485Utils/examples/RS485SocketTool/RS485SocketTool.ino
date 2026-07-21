@@ -33,7 +33,7 @@
 byte databuffer[SEND_BUFFER_SIZE];
 byte *send_buffer;
 
-RS485Socket rs485(PIN_RS485_RECV, PIN_RS485_XMIT, PIN_RS485_ENABLED, (DEBUG_LEVEL != 0));
+RS485Socket rs485(PIN_RS485_RECV, PIN_RS485_XMIT, PIN_RS485_ENABLED, ADDRESS);
 
 void setup() {
   Serial.begin(115200);
@@ -52,7 +52,7 @@ byte count = 0;
 void loop() {
   unsigned long now = millis();
 
-  if (now - SEND_PERIOD >= last_send_ms) {
+  if (now - last_send_ms >= SEND_PERIOD) {
     send_buffer[0] = 'T';
     send_buffer[1] = count++;
     DEBUG1_VALUELN("* Sending ", count);
