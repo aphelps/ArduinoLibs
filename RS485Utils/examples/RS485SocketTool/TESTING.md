@@ -68,19 +68,27 @@ transmit path is being driven. (With no second node, "Sending" lines are expecte
 ## 5. Two-node test (send + receive)
 
 1. Flash a second node. It can be another ESP32 on the `esp32` env, or an AVR board on the
-   `nano` env (`pio run -e nano --target upload`) with that board's RS485 pins wired.
+   `nano` env (`pio run -e nano --target upload`). The `nano` env leaves the sketch's default
+   AVR pins in place — `PIN_RS485_RECV=7`, `PIN_RS485_XMIT=4`, `PIN_RS485_ENABLED=2` — so wire
+   that board's transceiver RO/DI/RE+DE to pins 7/4/2 (the ESP32 pins in §2 apply to the ESP32 node only).
 2. Wire both transceivers to the **same** bus: `A`↔`A`, `B`↔`B`, and a **common ground**
    between the two nodes.
 3. Each node broadcasts (`sendMsgTo(SOCKET_ADDR_ANY, …)`) once per second, so each should
-   print the other's traffic. On each monitor, confirm lines like:
+   print the other's traffic. On each monitor, confirm a receive line appears about once per
+   second, in step with the other node's `* Sending N`:
 
    ```
-   * Received data 2: 54 01
+   * Received data 2:
    ```
 
-   i.e. a `* Received data <len>: <hex bytes>` line appearing about once per second, in step
-   with the other node's `* Sending N`. (The 2 payload bytes are `'T'` = `0x54` and the
-   sender's `count`.)
+   **Note the payload bytes are NOT shown at the default debug level.** The 2-byte payload
+   (`'T'` = `0x54`, then the sender's counter) is printed by `print_hex_buffer` via
+   `DEBUG4_HEXVAL`, which compiles to nothing below `DEBUG_LEVEL=4`; both envs build with
+   `-DDEBUG_LEVEL=1`, so you'll see `* Received data 2:` with a length but no hex. That length
+   (`2`) with the ~1 Hz cadence is the confirmation that reception works. To actually see the
+   hex bytes, rebuild that node with `-DDEBUG_LEVEL=4` (then the payload prints as e.g.
+   `* Received data 2:  54  02` — note the counter value lags the sender's printed `* Sending N`
+   by one, since the sketch stores `count` before the `count++` that the log line prints).
 
 Both nodes default to RS485 address 128; because the tool broadcasts to `SOCKET_ADDR_ANY`,
 receive works without assigning distinct addresses. (Override per node with `-DADDRESS=<n>`
@@ -98,7 +106,9 @@ if you want addressed instead of broadcast traffic.)
 
 ## Notes
 - Exact strings emitted by the sketch (`RS485SocketTool.ino`): `*** RS485SocketTool initialized ***`
-  (boot), `* Sending N` (every `SEND_PERIOD` = 1000 ms), `* Received data <len>: <hex>` (on receipt).
-- The sketch prints via `DEBUG1_*` macros; the `esp32` env builds with `-DDEBUG_LEVEL=1`, so these
-  lines are compiled in.
+  (boot), `* Sending N` (every `SEND_PERIOD` = 1000 ms), and `* Received data <len>:` on receipt.
+- These three are `DEBUG1_*` macros and print at the `esp32`/`nano` envs' `-DDEBUG_LEVEL=1`. The
+  received **payload hex** is emitted separately by `print_hex_buffer` → `DEBUG4_HEXVAL`, which is a
+  no-op below `DEBUG_LEVEL=4` — so at the default level the receive line shows the length but no
+  bytes. Rebuild with `-DDEBUG_LEVEL=4` to see the payload hex.
 - There are **no interactive/serial commands** — the tool runs autonomously once flashed.
