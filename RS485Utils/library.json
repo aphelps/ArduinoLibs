@@ -1,0 +1,28 @@
+{
+    "name": "RS485Utils",
+    "keywords": "rs485, socket, messaging, transport",
+    "description": "Socket-like API for communicating over RS485, layered on Nick Gammon's non-blocking RS485 protocol. On ESP32 build with -D RS485_HARDWARE_SERIAL=<uart> (SoftwareSerial is AVR-only).",
+    "authors":
+    {
+        "name": "Adam Phelps",
+        "email": "amp@cs.stanford.edu"
+    },
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/AMPWorks/ArduinoLibs.git"
+    },
+    "dependencies":
+    [
+        { "name": "Socket", "frameworks": "arduino" },
+        { "name": "Debug", "frameworks": "arduino" },
+        { "name": "RS485_non_blocking", "frameworks": "arduino" }
+    ],
+    "include": "RS485Utils",
+    "frameworks": "arduino",
+    "platforms": ["atmelavr", "espressif32"],
+    "build":
+    {
+        "srcFilter": ["+<*.c>", "+<*.cpp>", "-<examples/>"]
+    }
+}

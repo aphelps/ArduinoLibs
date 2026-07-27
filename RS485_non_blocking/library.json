@@ -1,0 +1,19 @@
+{
+    "name": "RS485_non_blocking",
+    "version": "1.0.0",
+    "keywords": "rs485, serial, protocol, non-blocking",
+    "description": "Nick Gammon's non-blocking RS485 packet protocol (STX/ETX framing, nibble-complemented bytes, CRC-8). Vendored verbatim; see LICENSE.txt. Required by RS485Utils.",
+    "authors":
+    {
+        "name": "Nick Gammon",
+        "url": "http://www.gammon.com.au/forum/?id=11428"
+    },
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/AMPWorks/ArduinoLibs.git"
+    },
+    "include": "RS485_non_blocking",
+    "frameworks": "arduino",
+    "platforms": ["atmelavr", "espressif32"]
+}

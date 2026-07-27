@@ -1,0 +1,39 @@
+RS485_non_blocking — third-party code vendored into ArduinoLibs
+================================================================
+
+Upstream author : Nick Gammon
+Upstream source : http://www.gammon.com.au/forum/?id=11428
+                  ("RS485 protocol library - non-blocking", 4 December 2012, v1.0)
+
+License notice, reproduced verbatim from the top of both
+RS485_non_blocking.h and RS485_non_blocking.cpp:
+
+    /*
+     RS485 protocol library - non-blocking.
+
+     Devised and written by Nick Gammon.
+     Date: 4 December 2012
+     Version: 1.0
+
+     Licence: Released for public use.
+
+    */
+
+Why it lives here
+-----------------
+ArduinoLibs' RS485Utils hard-includes <RS485_non_blocking.h>. Before this
+directory existed, every PlatformIO project that used RS485Utils had to point
+its library directory at a machine-local Arduino libraries folder, which made
+the build non-portable (that pattern is still present in some of the other
+ArduinoLibs/platformio/* example projects).
+
+Vendoring it as a sibling library means any project that already has
+ArduinoLibs on `lib_extra_dirs` resolves it automatically, with no
+machine-specific paths and no network fetch.
+
+Local modifications
+-------------------
+None. RS485_non_blocking.h and RS485_non_blocking.cpp are byte-for-byte the
+upstream 1.0 sources. Only this LICENSE.txt and library.json were added.
+Keep it that way — if a fix is needed, prefer working around it in RS485Utils
+so the vendored copy stays trivially comparable with upstream.

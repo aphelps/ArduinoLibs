@@ -1,0 +1,18 @@
+{
+    "name": "Socket",
+    "keywords": "socket, messaging, transport",
+    "description": "Abstract socket base class shared by the RS485/XBee/RFM69 transports",
+    "authors":
+    {
+        "name": "Adam Phelps",
+        "email": "amp@cs.stanford.edu"
+    },
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/AMPWorks/ArduinoLibs.git"
+    },
+    "include": "Socket",
+    "frameworks": "arduino",
+    "platforms": ["atmelavr", "espressif32"]
+}
