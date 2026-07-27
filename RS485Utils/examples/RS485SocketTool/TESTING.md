@@ -86,9 +86,11 @@ transmit path is being driven. (With no second node, "Sending" lines are expecte
    `DEBUG4_HEXVAL`, which compiles to nothing below `DEBUG_LEVEL=4`; both envs build with
    `-DDEBUG_LEVEL=1`, so you'll see `* Received data 2:` with a length but no hex. That length
    (`2`) with the ~1 Hz cadence is the confirmation that reception works. To actually see the
-   hex bytes, rebuild that node with `-DDEBUG_LEVEL=4` (then the payload prints as e.g.
-   `* Received data 2:  54  02` — note the counter value lags the sender's printed `* Sending N`
-   by one, since the sketch stores `count` before the `count++` that the log line prints).
+   payload bytes, rebuild that node with `-DDEBUG_LEVEL=4`; the two bytes then print as
+   space-separated hex after the colon — the first is `'T'` (`54`), the second is the sender's
+   counter. (Two quirks if you inspect closely: the counter value lags the sender's printed
+   `* Sending N` by one, since the sketch stores `count` before the `count++` the log prints;
+   and Arduino's `HEX` formatting isn't zero-padded, so small values show as a single digit.)
 
 Both nodes default to RS485 address 128; because the tool broadcasts to `SOCKET_ADDR_ANY`,
 receive works without assigning distinct addresses. (Override per node with `-DADDRESS=<n>`
