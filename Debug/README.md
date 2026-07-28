@@ -44,3 +44,31 @@ Future improvements
 
 * Expand the #def separation in Debug.h to only define the levels currently
 being used.
+
+
+## Key API
+
+Compile-time-leveled print macros (compile to nothing below their level):
+`DEBUGn_PRINT` / `DEBUGn_PRINTLN` / `DEBUGn_VALUE` / `DEBUGn_HEX` / `DEBUGn_COMMAND`
+for `n` = 1–5. Error helpers: `DEBUG_ERR(x)`, `DEBUG_ERR_STATE(x)`. Free functions:
+`void debug_err_state(int code)`, `void debug_print_memory()`,
+`void print_hex_buffer(const char *buff, int length)`. Format strings are stored in PROGMEM.
+(A legacy `DEBUG_PRINT(v, x)` macro block is deprecated.)
+
+## Configuration
+
+- `DEBUG_LEVEL` — the compile-time level gating all macros (see the section above for
+  enabling it globally or per-file). Levels: `DEBUG_NONE` (0), `DEBUG_ERROR` (1),
+  `DEBUG_LOW` (2), `DEBUG_MID` (3), `DEBUG_HIGH` (4), `DEBUG_TRACE` (5), plus
+  `DEBUG_ERROR_ONLY` (-1) to compile only the error commands.
+
+## Dependencies
+
+Arduino core only.
+
+## Example
+
+[../platformio/DebugExample/](../platformio/DebugExample/) (also `examples/DebugExample/`).
+
+---
+Part of [ArduinoLibs](../README.md).
