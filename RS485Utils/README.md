@@ -15,8 +15,14 @@ multi-drop serial bus. See [../Socket/](../Socket/) for the shared transport API
     `getLength()`, `headerFromData()`, `sourceFromData()`, `destFromData()`, `initialized()`.
 - Helpers: `void printSocketMsg(const rs485_socket_msg_t *msg)`,
   `void printBuffer(const byte *buff, int length)`.
-- On-wire header `rs485_socket_hdr_t`; size a send buffer with `RS485_BUFFER_TOTAL(n)`.
+- On-wire header `rs485_socket_hdr_t` — **7 bytes on every target**, `__attribute__((__packed__))`
+  with `static_assert`s pinning the size and all five field offsets
+  (`ID@0 length@1 source@2 address@4 flags@6`). Size a send buffer with `RS485_BUFFER_TOTAL(n)`.
   (The `*_FROM_DATA` macros are marked deprecated.)
+  The packing is load-bearing, not cosmetic: `sizeof(rs485_socket_hdr_t)` is what places the payload
+  on both send and receive, and unpacked it is 7 on AVR but 8 on any 2-byte-aligned ABI — so an ESP32
+  and an ATMega328 would disagree about where the payload starts and misparse every frame between
+  them. See the comment on the struct for the full story.
 
 ## Configuration
 - `RS485_HARDWARE_SERIAL` — the one real compile toggle: when defined (e.g.

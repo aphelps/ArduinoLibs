@@ -74,9 +74,20 @@ virtual socket_addr_t destFromData(void *data);
 
 Addresses are `socket_addr_t`; `SOCKET_ADDR_ANY` is the broadcast address and
 `SOCKET_ADDR_INVALID` the sentinel. Each transport adds its own on-wire header struct
-(`rs485_socket_hdr_t` / `rfm69_socket_hdr_t` / `xbee_socket_hdr_t`) and a `*_BUFFER_TOTAL(n)`
-macro for sizing the send buffer. Because they share the interface, a device can swap RS485
-for RFM69/XBee with minimal code change.
+(`rs485_socket_hdr_t` / `rfm69_socket_hdr_t` / `xbee_socket_hdr_t`), a `*_BUFFER_TOTAL(n)`
+macro for sizing the send buffer, and (for RFM69/XBee) a `*_DATA_LENGTH(n)` for the inverse.
+Because they share the interface, a device can swap RS485 for RFM69/XBee with minimal code change.
+
+**All three header structs are `__attribute__((__packed__))` with `static_assert`s pinning their
+size and every field offset — 7, 6 and 5 bytes respectively.** This is a correctness requirement, not
+a space optimisation. `sizeof(hdr)` is what positions the payload at both ends of the link, and these
+structs mix `byte` with 16-bit `socket_addr_t`, so an unpacked declaration is one size on AVR
+(alignment 1) and another on any 2-byte-aligned ABI. An AVR module and a 32-bit node would then
+disagree about where the payload starts and misparse every frame in both directions —
+`rfm69_socket_hdr_t` worse still, since its padding is *interior* and moves the addresses themselves.
+Packing pins the AVR layout, which is the one deployed modules already speak; it is layout-neutral on
+AVR, and the assertions say so rather than leaving it to be trusted. **Anything added to these structs
+must keep the attribute and extend the assertions.**
 
 ## Library reference
 
