@@ -240,9 +240,17 @@ int main() {
     unsigned int retlen = 0;
     CHECK(sock.getMsg(MY_ADDR, &retlen) != NULL, "first delivery succeeds");
 
-    // 256 valid-form byte pairs, none of them an STX.
+    /*
+     * 256 valid-form byte pairs, none of them an STX -- starting AT the stale CRC value.
+     *
+     * That starting point is the whole point. An earlier version started at 0x00, and the first
+     * completed byte then mismatched the stale CRC, which makes the unfixed library call reset() and
+     * close the window by itself: the test passed with the fix disabled and proved nothing. Beginning
+     * at the value that DOES match means the unfixed code re-delivers on the very first pair.
+     */
+    const uint8_t staleCrc = wire_crc8(msg.data(), (uint8_t)msg.size());
     std::vector<uint8_t> noise;
-    for (int i = 0; i < 256; i++) wire_push_byte(noise, (uint8_t)i);
+    for (int i = 0; i < 256; i++) wire_push_byte(noise, (uint8_t)((staleCrc + i) & 0xFF));
     Serial.feed(noise.data(), noise.size());
 
     int deliveries = 0;
@@ -279,11 +287,26 @@ int main() {
   {
     RS485Socket sock;
     fresh_socket(sock, MY_ADDR);
+
+    /*
+     * Deliver a good frame addressed to us FIRST, then the runt. Without that priming step this is a
+     * probabilistic test rather than a control: the unfixed getMsg() reads hdr.address out of a
+     * freshly-malloc'd buffer at offsets 4-5, which is uninitialised rather than out of bounds, so it
+     * only misbehaves when that garbage happens to equal MY_ADDR -- on a clean heap the test passes
+     * with the fix disabled. Priming leaves our own address sitting at those offsets, so the unfixed
+     * code matches on the stale address and hands back a bogus payload every time.
+     */
+    std::vector<uint8_t> primer = socket_msg(OTHER_ADDR, MY_ADDR, PAYLOAD, sizeof(PAYLOAD));
+    std::vector<uint8_t> primerFramed = wire_frame(primer.data(), (uint8_t)primer.size());
+    Serial.feed(primerFramed.data(), primerFramed.size());
+    unsigned int retlen = 0;
+    CHECK(sock.getMsg(MY_ADDR, &retlen) != NULL, "primer frame delivered");
+
     const uint8_t runt[] = { 1, 2, 3 };   // shorter than sizeof(rs485_socket_hdr_t) == 7
     std::vector<uint8_t> framed = wire_frame(runt, (uint8_t)sizeof(runt));
     Serial.feed(framed.data(), framed.size());
 
-    unsigned int retlen = 0;
+    retlen = 0;
     CHECK(sock.getMsg(MY_ADDR, &retlen) == NULL, "DEFECT 4: sub-header-length frame is rejected");
     CHECK(retlen == 0, "DEFECT 4: retlen cleared for a runt frame");
   }
@@ -396,6 +419,113 @@ int main() {
     unsigned int retlen = 0;
     CHECK(sock.getMsg(MY_ADDR, &retlen) == NULL, "getMsg on an uninitialised socket returns NULL");
     CHECK(!sock.initialized(), "an uninitialised socket says so");
+  }
+
+  // 12) Two complete frames arriving in one burst — the most common real sequence, and the one that
+  //     most directly exercises the deferred reset: update() returns at the first frame's CRC with the
+  //     second frame still sitting in the queue.
+  {
+    RS485Socket sock;
+    fresh_socket(sock, MY_ADDR);
+    const uint8_t SECOND[] = { 0xFC, 0x11, 0x22, 0x33 };
+    std::vector<uint8_t> m1 = socket_msg(OTHER_ADDR, MY_ADDR, PAYLOAD, sizeof(PAYLOAD));
+    std::vector<uint8_t> m2 = socket_msg(OTHER_ADDR, MY_ADDR, SECOND, sizeof(SECOND));
+    std::vector<uint8_t> f1 = wire_frame(m1.data(), (uint8_t)m1.size());
+    std::vector<uint8_t> f2 = wire_frame(m2.data(), (uint8_t)m2.size());
+    Serial.feed(f1.data(), f1.size());
+    Serial.feed(f2.data(), f2.size());
+
+    unsigned int retlen = 0;
+    const byte *d1 = sock.getMsg(MY_ADDR, &retlen);
+    CHECK(d1 != NULL && retlen == sizeof(PAYLOAD), "back-to-back: first frame delivered");
+    CHECK(d1 != NULL && memcmp(d1, PAYLOAD, sizeof(PAYLOAD)) == 0, "back-to-back: first payload right");
+    CHECK(sock.getLength() == (byte)m1.size(), "back-to-back: getLength() tracks the first frame");
+
+    retlen = 0;
+    const byte *d2 = sock.getMsg(MY_ADDR, &retlen);
+    CHECK(d2 != NULL && retlen == sizeof(SECOND), "back-to-back: second frame delivered");
+    CHECK(d2 != NULL && memcmp(d2, SECOND, sizeof(SECOND)) == 0, "back-to-back: second payload right");
+    CHECK(sock.getLength() == (byte)m2.size(), "back-to-back: getLength() tracks the second frame");
+  }
+
+  // 13) The rest of a frame arriving after a long poll gap must still be delivered.
+  //
+  // This is the case that makes the timeout ordering observable, and it is a REGRESSION guard, not a
+  // feature test: startTime_ is stamped when update() parses the STX, so the elapsed time the timeout
+  // sees is poll latency, not wire time. Check the timeout before update() and this frame is thrown
+  // away even though its remaining bytes are already in the FIFO — traffic that worked fine before the
+  // timeout existed. Running the check after update() drains the queue first, so a completable frame
+  // completes and only a genuinely stalled one is abandoned.
+  {
+    RS485Socket sock;
+    fresh_socket(sock, MY_ADDR);
+    std::vector<uint8_t> msg = socket_msg(OTHER_ADDR, MY_ADDR, PAYLOAD, sizeof(PAYLOAD));
+    std::vector<uint8_t> framed = wire_frame(msg.data(), (uint8_t)msg.size());
+
+    size_t split = framed.size() / 2;
+    Serial.feed(framed.data(), split);                       // first half arrives
+    unsigned int retlen = 0;
+    CHECK(sock.getMsg(MY_ADDR, &retlen) == NULL, "partial frame not yet delivered");
+
+    test_time_advance(RS485_PACKET_TIMEOUT_MS + 50);         // caller was busy (strip update, flash write)
+    Serial.feed(framed.data() + split, framed.size() - split);   // the rest is already in the FIFO
+
+    retlen = 0;
+    const byte *data = sock.getMsg(MY_ADDR, &retlen);
+    CHECK(data != NULL, "frame completed across a long poll gap is still delivered");
+    CHECK(retlen == sizeof(PAYLOAD), "and with the right length");
+    CHECK(sock.getTimeoutCount() == 0, "and no timeout was counted for it");
+  }
+
+  // 14) The two getMsg() overloads share one msgPending contract; interleaving them must be safe.
+  {
+    RS485Socket sock;
+    fresh_socket(sock, MY_ADDR);
+    std::vector<uint8_t> msg = socket_msg(OTHER_ADDR, MY_ADDR, PAYLOAD, sizeof(PAYLOAD));
+    std::vector<uint8_t> framed = wire_frame(msg.data(), (uint8_t)msg.size());
+    Serial.feed(framed.data(), framed.size());
+
+    unsigned int retlen = 0;
+    CHECK(sock.getMsg(&retlen) != NULL, "the sourceAddress overload delivers");  // filters on MY_ADDR
+
+    std::vector<uint8_t> staleTrigger;
+    wire_push_byte(staleTrigger, wire_crc8(msg.data(), (uint8_t)msg.size()));
+    Serial.feed(staleTrigger.data(), staleTrigger.size());
+
+    retlen = 0;
+    CHECK(sock.getMsg(RS485_ADDR_ANY, &retlen) == NULL,
+          "a packet consumed via one overload is not re-delivered by the other");
+  }
+
+  // 15) The timeout scales with the line rate.
+  //
+  // Without this, a full-size frame at a slow baud is longer on the wire than the fixed default and is
+  // abandoned mid-flight every time — the receiver stays deaf to large frames while small ones get
+  // through, which is a miserable thing to diagnose. baud is user-settable in the bridge's config, so
+  // this is reachable from the settings page, not just in theory.
+  {
+    RS485Socket sock;
+    fresh_socket(sock, MY_ADDR);
+    std::vector<uint8_t> msg = socket_msg(OTHER_ADDR, MY_ADDR, PAYLOAD, sizeof(PAYLOAD));
+    std::vector<uint8_t> framed = wire_frame(msg.data(), (uint8_t)msg.size());
+
+    sock.setPacketTimeoutForBaud(4800);                      // ~275 ms for a maximal frame
+    Serial.feed(framed.data(), framed.size() / 2);
+    unsigned int retlen = 0;
+    sock.getMsg(MY_ADDR, &retlen);
+
+    test_time_advance(RS485_PACKET_TIMEOUT_MS + 50);         // past the DEFAULT, not past the derived one
+    retlen = 0;
+    sock.getMsg(MY_ADDR, &retlen);
+    CHECK(sock.packetInProgress(),
+          "a slow-baud frame is not abandoned at the default timeout");
+    CHECK(sock.getTimeoutCount() == 0, "and nothing was counted against it");
+
+    test_time_advance(2000);                                 // now past the derived timeout too
+    retlen = 0;
+    sock.getMsg(MY_ADDR, &retlen);
+    CHECK(!sock.packetInProgress(), "but it is abandoned once the derived timeout expires");
+    CHECK(sock.getTimeoutCount() == 1, "and counted");
   }
 
   printf("\n%d checks, %d failures\n", checks, failures);

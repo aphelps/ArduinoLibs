@@ -206,7 +206,16 @@ class RS485Socket : public Socket
   boolean packetInProgress();
 
   /* How many partial packets have been abandoned by the receive timeout since boot. */
-  unsigned long getTimeoutCount();
+  uint16_t getTimeoutCount();
+
+  /*
+   * Scale the packet timeout to the line rate. The default is sized for DEFAULT_BAUD; a slower bus
+   * needs longer, because a maximal frame legitimately takes longer to arrive. Call after init() if
+   * the port runs at anything other than DEFAULT_BAUD -- otherwise a full-size frame at, say, 4800
+   * baud (275 ms on the wire) would be abandoned mid-flight every single time and the receiver would
+   * be permanently deaf to large frames while small ones got through.
+   */
+  void setPacketTimeoutForBaud(unsigned long baud);
 
   /*
    * How many complete packets have been rejected by the socket-layer length checks since boot.
@@ -216,7 +225,7 @@ class RS485Socket : public Socket
    * empty bus and stop draining. Without this, moving the length checks out of the debug guard would
    * have traded a memory-safety hole for a silent one: bad frames would stop being counted anywhere.
    */
-  unsigned long getRejectCount();
+  uint16_t getRejectCount();
 
   byte recvLimit;
 	socket_addr_t sourceAddress;
@@ -246,11 +255,18 @@ class RS485Socket : public Socket
    */
   boolean msgPending;
 
-  /* Partial packets abandoned by the receive timeout. Not reset by init(). */
-  unsigned long timeoutCount;
+  /*
+   * Diagnostic counters. uint16_t rather than unsigned long deliberately: these are per-socket
+   * members and RS485Socket ships on ATmega328 parts with 2 KB of SRAM, so the pair costs 4 bytes
+   * instead of 8. Wrapping is harmless -- they exist to answer "is this happening?", and the one
+   * programmatic consumer (the WLED bridge) compares before/after around a single call, which
+   * survives a wrap.
+   */
+  uint16_t timeoutCount;
+  uint16_t rejectCount;
 
-  /* Complete-but-malformed packets rejected by the length checks in getMsg(). */
-  unsigned long rejectCount;
+  /* Effective packet timeout; RS485_PACKET_TIMEOUT_MS unless setPacketTimeoutForBaud() raises it. */
+  unsigned long packetTimeoutMs;
 
   static size_t serialWrite(const byte what);
   static size_t serialDebugWrite(const byte what);

@@ -51,6 +51,7 @@ RS485Socket::RS485Socket() {
   msgPending = false;
   timeoutCount = 0;
   rejectCount = 0;
+  packetTimeoutMs = RS485_PACKET_TIMEOUT_MS;
 }
 
 RS485Socket::RS485Socket(SERIAL_TYPE *_serial, byte _enablePin,
@@ -117,6 +118,7 @@ void RS485Socket::init_general(SERIAL_TYPE *_serial, byte _enablePin,
   msgPending = false;
   timeoutCount = 0;
   rejectCount = 0;
+  packetTimeoutMs = RS485_PACKET_TIMEOUT_MS;
 }
 
 /*
@@ -137,11 +139,11 @@ boolean RS485Socket::packetInProgress() {
   return channel->isPacketStarted();
 }
 
-unsigned long RS485Socket::getTimeoutCount() {
+uint16_t RS485Socket::getTimeoutCount() {
   return timeoutCount;
 }
 
-unsigned long RS485Socket::getRejectCount() {
+uint16_t RS485Socket::getRejectCount() {
   return rejectCount;
 }
 
@@ -156,6 +158,16 @@ void RS485Socket::setup()
 #if !defined(ESP32)
   serial->begin(DEFAULT_BAUD);
 #endif
+
+  /*
+   * Guard the allocation from init_general(). On AVR a failed `new` returns NULL, and the AVR fleet is
+   * precisely the case that matters here — without this, the crash landed inside setup() one line
+   * before any caller could ask initialized() whether the socket came up.
+   */
+  if (channel == NULL) {
+    DEBUG_ERR("RS485Socket::setup no channel");
+    return;
+  }
 
   channel->begin();
 
@@ -300,16 +312,7 @@ const byte *RS485Socket::getMsg(socket_addr_t address, unsigned int *retlen)
     msgPending = false;
   }
 
-  // (2) Abandon a partial packet that has stalled. reset() leaves haveETX_ and firstNibble_ alone,
-  //     which is harmless: with haveSTX_ clear, update()'s default branch discards bytes until the
-  //     next STX, and that STX sets all three.
-  if (channel->isPacketStarted() &&
-      (millis() - channel->getPacketStartTime() > RS485_PACKET_TIMEOUT_MS)) {
-    channel->reset();
-    timeoutCount++;
-  }
-
-  // (3) Read.
+  // (2) Read.
   if (channel->update()) {
     /*
      * A complete packet exists, so it is consumed whatever we decide about it below. Set the flag
@@ -365,12 +368,48 @@ const byte *RS485Socket::getMsg(socket_addr_t address, unsigned int *retlen)
     }
   }
 
+  /*
+   * (3) Nothing completed. Only now consider abandoning a stalled partial packet.
+   *
+   * AFTER update(), never before. startTime_ is stamped when update() *parses* the STX, so the
+   * elapsed time measured here includes however long the caller spent not polling — it is poll
+   * latency, not wire time. Checking before update() would therefore discard a frame whose remaining
+   * bytes were already sitting in the UART FIFO, simply because the caller was busy for a while
+   * (WLED skips this usermod's whole loop while the LED strip is updating, blocks ~48 ms per
+   * transmitted frame, and writes flash on SET_ADDRESS). Draining first means a frame that CAN
+   * complete does complete, and only a genuinely stalled one is dropped — so this can no longer lose
+   * traffic that worked before the timeout existed.
+   */
+  if (channel->isPacketStarted() &&
+      (millis() - channel->getPacketStartTime() > packetTimeoutMs)) {
+    channel->reset();
+    timeoutCount++;
+  }
+
   *retlen = 0;
   return NULL;
 }
 
+/*
+ * The timeout has to track the line rate, because a maximal frame at a slow baud can legitimately take
+ * longer than the default. RS485_RECV_BUFFER bytes go out as two nibble-complemented bytes each, plus
+ * STX, ETX and a two-byte CRC, at 10 bits per byte; five times that is the budget, floored at the
+ * compile-time default so a fast bus still tolerates poll jitter.
+ *
+ * At 28000 baud this yields the 250 ms floor; at 4800 it yields ~1.4 s, where a fixed 250 ms would have
+ * killed every full-size frame mid-flight and left the receiver permanently deaf to large frames.
+ */
+void RS485Socket::setPacketTimeoutForBaud(unsigned long baud) {
+  if (baud == 0) return;
+  const unsigned long wireMs =
+      ((unsigned long)RS485_RECV_BUFFER * 2UL + 4UL) * 10UL * 1000UL / baud;
+  const unsigned long derived = wireMs * 5UL;
+  packetTimeoutMs = (derived > RS485_PACKET_TIMEOUT_MS) ? derived : RS485_PACKET_TIMEOUT_MS;
+}
+
 byte RS485Socket::getLength()
 {
+  if (channel == NULL) return 0;
   return channel->getLength();
 }
 
