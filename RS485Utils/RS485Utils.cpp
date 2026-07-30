@@ -48,6 +48,9 @@ RS485Socket::RS485Socket() {
   enablePin = 0;
   serial = NULL;
   channel = NULL;
+  msgPending = false;
+  timeoutCount = 0;
+  rejectCount = 0;
 }
 
 RS485Socket::RS485Socket(SERIAL_TYPE *_serial, byte _enablePin,
@@ -111,11 +114,35 @@ void RS485Socket::init_general(SERIAL_TYPE *_serial, byte _enablePin,
                       recvLimit);
 
   currentMsgID = 0;
-
+  msgPending = false;
+  timeoutCount = 0;
+  rejectCount = 0;
 }
 
+/*
+ * A socket is only usable if all three of these hold. The third is the one that used to be missing:
+ * RS485::begin() allocates the receive buffer with an unchecked malloc, and a NULL buffer makes
+ * update() return false forever — a receiver silently dead for the whole boot while the rest of the
+ * system looks healthy. getData() is public and returns that buffer, so testing it costs nothing and
+ * needs no change to the vendored library.
+ *
+ * Note this can only be meaningful after setup(), which is what calls begin().
+ */
 boolean RS485Socket::initialized() {
-  return (serial != NULL);
+  return (serial != NULL) && (channel != NULL) && (channel->getData() != NULL);
+}
+
+boolean RS485Socket::packetInProgress() {
+  if (channel == NULL) return false;
+  return channel->isPacketStarted();
+}
+
+unsigned long RS485Socket::getTimeoutCount() {
+  return timeoutCount;
+}
+
+unsigned long RS485Socket::getRejectCount() {
+  return rejectCount;
 }
 
 void RS485Socket::setup() 
@@ -231,9 +258,67 @@ const byte *RS485Socket::getMsg(unsigned int *retlen) {
   return getMsg(sourceAddress, retlen);
 }
 
+/*
+ * Receive one message. See the pointer-lifetime note on the declaration in RS485Utils.h.
+ *
+ * THE ORDER OF THE THREE STEPS BELOW IS LOAD-BEARING: deferred reset, then timeout, then update().
+ *
+ *  1. Deferred reset. A packet handed out (or rejected) on the previous call is cleared now rather
+ *     than then, which is what keeps getData()/getLength() valid while the caller still holds the
+ *     pointer. Clearing it at all is the fix for the real bug: the vendored update() sets available_
+ *     and returns true WITHOUT resetting, so haveSTX_/haveETX_/inputPos_ stayed live past the packet.
+ *     Any subsequent valid-form byte then completed against a still-set haveETX_ and was tested as a
+ *     CRC over the PREVIOUS packet's buffer — and on a match, update() returned true again and the
+ *     caller re-processed a stale payload as fresh. Harmless for a colour command; not harmless for
+ *     SET_ADDRESS, which consumers persist.
+ *
+ *  2. Timeout, and only after the reset. If it ran first, a delivered packet — which leaves haveSTX_
+ *     set and startTime_ at its own STX time until this next call — would make any long gap between
+ *     polls look like a truncated frame. Those gaps are routine (the WLED bridge skips its whole loop
+ *     while the LED strip is updating, and blocks ~48 ms per transmitted frame in serial->flush()).
+ *     After step 1 the channel is already clear, so isPacketStarted() is false and this cannot
+ *     misfire. Gate on isPacketStarted() first regardless: reset() zeroes startTime_, so the elapsed
+ *     comparison is meaningless on its own.
+ *
+ *  3. update(), which reads whatever has arrived.
+ */
 const byte *RS485Socket::getMsg(socket_addr_t address, unsigned int *retlen)
 {
+  /*
+   * Nothing to receive on a socket that was never init()ed. Guarding here matters because
+   * init_general()'s `new RS485(...)` is unchecked: without this, a failed allocation was a null
+   * dereference on the first receive rather than a quiet no-op.
+   */
+  if (channel == NULL) {
+    *retlen = 0;
+    return NULL;
+  }
+
+  // (1) Clear the packet consumed on the previous call.
+  if (msgPending) {
+    channel->reset();
+    msgPending = false;
+  }
+
+  // (2) Abandon a partial packet that has stalled. reset() leaves haveETX_ and firstNibble_ alone,
+  //     which is harmless: with haveSTX_ clear, update()'s default branch discards bytes until the
+  //     next STX, and that STX sets all three.
+  if (channel->isPacketStarted() &&
+      (millis() - channel->getPacketStartTime() > RS485_PACKET_TIMEOUT_MS)) {
+    channel->reset();
+    timeoutCount++;
+  }
+
+  // (3) Read.
   if (channel->update()) {
+    /*
+     * A complete packet exists, so it is consumed whatever we decide about it below. Set the flag
+     * BEFORE any of the early returns: the address-mismatch and length-rejection paths consume a
+     * packet just as much as a successful delivery does, and for consumers that filter on their own
+     * address (HMTL_Module, HMTL_Command_CLI) mismatch is the common case on a shared bus — arming
+     * this only on the delivery path would leave the stale window permanently open for them.
+     */
+    msgPending = true;
 
 #if DEBUG_LEVEL >= DEBUG_TRACE
     DEBUG_ENDLN()
@@ -242,17 +327,33 @@ const byte *RS485Socket::getMsg(socket_addr_t address, unsigned int *retlen)
 
     const rs485_socket_msg_t *msg = (rs485_socket_msg_t *)channel->getData();
 
-#if DEBUG_LEVEL >= DEBUG_TRACE
+    /*
+     * Bounds checks, which used to live inside `#if DEBUG_LEVEL >= DEBUG_TRACE` and so existed only in
+     * a trace-level debug build. In every release build getMsg() dereferenced msg->hdr.address out of
+     * a buffer that might be shorter than the header, and returned *retlen = msg->hdr.length — a
+     * sender-declared byte, up to 255 — pointing into a buffer of only recvLimit (default 64). A
+     * caller that trusted it read well past the end of the allocation.
+     *
+     * Two checks are sufficient and a third would be redundant: the second implies
+     * hdr.length <= getLength() - sizeof(hdr), and getLength() returns inputPos_, which update()
+     * bounds by bufferSize_ == recvLimit. Only the tests and the returns came out of the debug guard;
+     * the DEBUG_ERR reporting stays inside it.
+     */
     if (getLength() < sizeof (rs485_socket_hdr_t)) {
       DEBUG_ERR("ERROR-length < header");
-      goto ERROR_OUT;
+      rejectCount++;
+      *retlen = 0;
+      return NULL;
     }
 
     if (getLength() < (sizeof (rs485_socket_hdr_t) + msg->hdr.length)) {
       DEBUG_ERR("ERROR-length < header + data");
-      goto ERROR_OUT;
+      rejectCount++;
+      *retlen = 0;
+      return NULL;
     }
 
+#if DEBUG_LEVEL >= DEBUG_TRACE
     DEBUG4_PRINT(" RECV: ");
     printSocketMsg(msg);
     DEBUG_PRINT_END();
@@ -263,10 +364,6 @@ const byte *RS485Socket::getMsg(socket_addr_t address, unsigned int *retlen)
       return &msg->data[0];
     }
   }
-
-#if DEBUG_LEVEL >= DEBUG_TRACE
- ERROR_OUT:
-#endif
 
   *retlen = 0;
   return NULL;

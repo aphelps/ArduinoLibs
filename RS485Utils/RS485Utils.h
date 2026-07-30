@@ -31,6 +31,24 @@
 #define RS485_RECV_BUFFER 64 // 140 // XXX: This is a lot of buffer space
 
 /*
+ * How long a partially-received packet may sit unfinished before the receiver gives up on it.
+ *
+ * Nick Gammon's library deliberately leaves this to the caller (it exposes isPacketStarted() and
+ * getPacketStartTime() for the purpose and says so in a comment), and nothing here picked it up — so a
+ * frame truncated mid-flight left haveSTX_ set until the next STX arrived, however long that took,
+ * with every byte in between fed into the partial packet.
+ *
+ * 250 ms is derived, not guessed. RS485_RECV_BUFFER is the whole frame budget, and Gammon's encoding
+ * sends each byte as two nibble-complemented bytes plus STX, ETX and a 2-byte CRC, so a maximal frame
+ * is 64*2 + 4 = 132 bytes on the wire; at DEFAULT_BAUD (28000, 8N1 -> 2800 B/s) that is ~47 ms. 250 ms
+ * is therefore ~5x headroom, and it replaces a bound that was previously unbounded. Raise it if you run
+ * a slower bus or a larger RS485_RECV_BUFFER.
+ */
+#ifndef RS485_PACKET_TIMEOUT_MS
+#define RS485_PACKET_TIMEOUT_MS 250
+#endif
+
+/*
  * By default this code uses a software serial device.  If the RS485 chip is
  * attached to the hardware serial pins then those can be used instead by
  * specifying the port to use with the RS485_HARDWARE_SERIAL compile flag.
@@ -150,6 +168,21 @@ class RS485Socket : public Socket
   byte * initBuffer(byte * data);
 
   void sendMsgTo(socket_addr_t address, const byte * data, const byte length);
+
+  /*
+   * Receive one message, or NULL if none is available or it was not for `address`.
+   *
+   * POINTER LIFETIME — read this before changing anything in here. The returned pointer aliases the
+   * channel's receive buffer; it stays valid, and getLength() keeps reporting this frame's length,
+   * until the NEXT call to either getMsg() overload. That contract is what lets a caller do
+   *
+   *     data = getMsg(&len);  ...  socketLen = getLength();   // still this frame
+   *
+   * which the WLED rs485_bridge relies on to bounds-check the frame after the fact. The consumed
+   * packet is cleared at the TOP of the following call (see the deferred reset in the .cpp), not on
+   * the way out of this one, precisely so that ordering is safe. Copy the payload out before calling
+   * again if you need to keep it.
+   */
   const byte *getMsg(socket_addr_t address, unsigned int *retlen);
   const byte *getMsg(unsigned int *retlen);
   byte getLength();
@@ -157,7 +190,33 @@ class RS485Socket : public Socket
   socket_addr_t sourceFromData(void *data);
   socket_addr_t destFromData(void *data);
 
+  /*
+   * True once the socket is usable: serial set, channel allocated, AND the channel's receive buffer
+   * successfully allocated. That last term matters — RS485::begin() mallocs without checking, and a
+   * NULL buffer makes update() return false forever, i.e. a receiver silently dead for the whole boot
+   * while everything else looks healthy. Callers should treat false here as a hard setup failure and
+   * say so, rather than running on in a state where no frame can ever arrive.
+   */
   boolean initialized();
+
+  /*
+   * True while a partial packet is being assembled (an STX has been seen, no complete frame yet).
+   * Exposed mainly so tests and diagnostics can observe the timeout doing its job.
+   */
+  boolean packetInProgress();
+
+  /* How many partial packets have been abandoned by the receive timeout since boot. */
+  unsigned long getTimeoutCount();
+
+  /*
+   * How many complete packets have been rejected by the socket-layer length checks since boot.
+   *
+   * Exists so a rejection stays observable to the caller. getMsg() returns NULL both for "nothing
+   * arrived" and "something arrived and was malformed", and consumers reasonably treat NULL as an
+   * empty bus and stop draining. Without this, moving the length checks out of the debug guard would
+   * have traded a memory-safety hole for a silent one: bad frames would stop being counted anywhere.
+   */
+  unsigned long getRejectCount();
 
   byte recvLimit;
 	socket_addr_t sourceAddress;
@@ -172,6 +231,26 @@ class RS485Socket : public Socket
   byte currentMsgID;
 
   RS485 *channel;
+
+  /*
+   * True when update() has handed us a completed packet that the caller has now been given (or
+   * rejected). The channel is reset at the top of the NEXT getMsg() rather than immediately, which is
+   * what keeps getData()/getLength() valid for as long as the caller holds the pointer — see the
+   * lifetime note on getMsg().
+   *
+   * Set on EVERY path taken after update() returns true, not just the one that returns a payload. The
+   * address-mismatch and length-check paths consume a packet too, and for consumers that filter on
+   * their own address (HMTL_Module, HMTL_Command_CLI) mismatch is the common case on a shared bus, so
+   * arming this only on delivery would leave the stale-packet window permanently open for exactly the
+   * callers that need it closed.
+   */
+  boolean msgPending;
+
+  /* Partial packets abandoned by the receive timeout. Not reset by init(). */
+  unsigned long timeoutCount;
+
+  /* Complete-but-malformed packets rejected by the length checks in getMsg(). */
+  unsigned long rejectCount;
 
   static size_t serialWrite(const byte what);
   static size_t serialDebugWrite(const byte what);
