@@ -147,6 +147,16 @@ uint16_t RS485Socket::getRejectCount() {
   return rejectCount;
 }
 
+uint32_t RS485Socket::getFramingErrorCount() {
+  // Null-guarded like packetInProgress()/getLength(): a socket whose channel allocation failed must
+  // report zero rather than dereference. Note the value is only MEANINGFUL once setup() has run --
+  // initialized() is the stronger test, but returning 0 for an un-set-up socket is the same answer.
+  if (channel == NULL) return 0;
+  // No narrowing: getErrorCount() is an unsigned long, and truncating it would make a wrap look like
+  // the counter going down.
+  return (uint32_t)channel->getErrorCount();
+}
+
 void RS485Socket::setup() 
 {
   if (serial == NULL) {
