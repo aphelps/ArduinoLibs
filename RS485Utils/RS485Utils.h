@@ -34,13 +34,27 @@
  * By default this code uses a software serial device.  If the RS485 chip is
  * attached to the hardware serial pins then those can be used instead by
  * specifying the port to use with the RS485_HARDWARE_SERIAL compile flag.
+ *
+ * SoftwareSerial is AVR-only, so on any other platform RS485_HARDWARE_SERIAL is
+ * mandatory.  When neither backend is available the library compiles to nothing
+ * (RS485UTILS_SUPPORTED == 0) rather than erroring out: that keeps this
+ * directory harmless when a larger project (e.g. a WLED build matrix) has
+ * ArduinoLibs on lib_extra_dirs and the library dependency finder pulls it in
+ * without the RS485 flags.  Guard any use of RS485Socket with
+ * `#if RS485UTILS_SUPPORTED`.
  */
 //#define RS485_HARDWARE_SERIAL Serial1
-#ifdef RS485_HARDWARE_SERIAL
+#if defined(RS485_HARDWARE_SERIAL)
+#define RS485UTILS_SUPPORTED 1
 #define SERIAL_TYPE HardwareSerial
-#else
+#elif defined(__AVR__)
+#define RS485UTILS_SUPPORTED 1
 #define SERIAL_TYPE SoftwareSerial
+#else
+#define RS485UTILS_SUPPORTED 0
 #endif
+
+#if RS485UTILS_SUPPORTED
 
 
 // "Broadcast" address
@@ -129,5 +143,7 @@ class RS485Socket : public Socket
 										socket_addr_t _address, byte _recvsize,
 										boolean _debug);
 };
+
+#endif // RS485UTILS_SUPPORTED
 
 #endif // RS485UTILS_H

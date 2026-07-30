@@ -31,10 +31,18 @@
 
 #include "RS485Utils.h"
 
+// No usable serial backend on this platform (see RS485Utils.h): compile to nothing rather than
+// failing, so a project that merely has ArduinoLibs on lib_extra_dirs still builds.
+#if RS485UTILS_SUPPORTED
+
 // XXX: Need to figure out how to use non-static function pointers so this
 //      can be a class field.
-
-SERIAL_TYPE *serial;
+//
+// This must stay `static` (internal linkage): only this translation unit's
+// static callbacks touch it, and a bare global named `serial` is a link-time
+// collision hazard once RS485Utils.cpp is compiled into a larger image (e.g.
+// the WLED firmware).
+static SERIAL_TYPE *serial;
 
 RS485Socket::RS485Socket() {
   enablePin = 0;
@@ -294,3 +302,5 @@ void printSocketMsg(const rs485_socket_msg_t *msg)
   print_hex_buffer((char *)msg->data, msg->hdr.length);
 }
 #endif
+
+#endif // RS485UTILS_SUPPORTED
