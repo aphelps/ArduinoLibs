@@ -227,6 +227,21 @@ class RS485Socket : public Socket
    */
   uint16_t getRejectCount();
 
+  /*
+   * Framing errors seen by THIS receiver since boot, as counted by the underlying protocol library:
+   * a byte that failed the nibble-complement form check, a CRC mismatch, or a receive-buffer
+   * overflow. RS485_non_blocking lumps all three into one counter, so this cannot tell them apart --
+   * the name says "framing" rather than "overflow" for that reason.
+   *
+   * Two things it deliberately does NOT tell you, both worth knowing before reading a non-zero value:
+   *   * On a real bus the likeliest cause is line noise or missing termination, not overflow. Treat a
+   *     slowly climbing value as a wiring question, not a software one.
+   *   * It cannot see a frame THIS node sent being dropped by a peer whose buffer was too small --
+   *     that overflow happens in the peer's channel, and a half-duplex sender does not hear itself.
+   *     Use the transmit-side length checks for that.
+   */
+  uint16_t getFramingErrorCount();
+
   byte recvLimit;
 	socket_addr_t sourceAddress;
 

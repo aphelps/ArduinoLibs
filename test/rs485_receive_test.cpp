@@ -531,6 +531,66 @@ int main() {
     CHECK(sock.getTimeoutCount() == 1, "and counted");
   }
 
+  // 16) THE FRAME-SIZE CEILING, demonstrated rather than asserted.
+  //
+  // RS485_RECV_BUFFER is the budget for the WHOLE decoded frame -- socket header included -- not for
+  // the payload. update() stores while inputPos_ < bufferSize_, so exactly RS485_RECV_BUFFER decoded
+  // bytes fit and the next one resets the packet. With a 7-byte socket header that puts the real
+  // payload ceiling at RS485_RECV_BUFFER - 7 == 57, not the 64 the bridge's transmit slot used to
+  // allow.
+  //
+  // This is the test the arithmetic static_assert in the firmware cannot be: that assert is true by
+  // construction once the slot is derived from the buffer size, so it can never fail. These two cases
+  // can, and they are what pin 57 rather than 56 or 58.
+  {
+    const uint8_t maxPayload = (uint8_t)(RS485_RECV_BUFFER - sizeof(rs485_socket_hdr_t));
+    CHECK(maxPayload == 57, "the payload ceiling is 57 (64-byte buffer minus a 7-byte header)");
+
+    // 57 bytes: 7 + 57 == 64 == the buffer. Must arrive intact.
+    {
+      RS485Socket sock;
+      fresh_socket(sock, MY_ADDR);
+      std::vector<uint8_t> big(maxPayload);
+      for (uint8_t i = 0; i < maxPayload; i++) big[i] = (uint8_t)(0xA0 + i);
+      std::vector<uint8_t> msg = socket_msg(OTHER_ADDR, MY_ADDR, big.data(), maxPayload);
+      CHECK(msg.size() == RS485_RECV_BUFFER, "a max-payload frame is exactly buffer-sized");
+      std::vector<uint8_t> framed = wire_frame(msg.data(), (uint8_t)msg.size());
+      Serial.feed(framed.data(), framed.size());
+
+      unsigned int retlen = 0;
+      const byte *data = sock.getMsg(MY_ADDR, &retlen);
+      CHECK(data != NULL, "a 57-byte payload is delivered");
+      CHECK(retlen == maxPayload, "with its full length");
+      CHECK(data != NULL && memcmp(data, big.data(), maxPayload) == 0, "and its bytes intact");
+      CHECK(sock.getFramingErrorCount() == 0, "and no framing error counted");
+    }
+
+    // 58 bytes: 7 + 58 == 65, one past the buffer. Must be dropped, and counted.
+    {
+      RS485Socket sock;
+      fresh_socket(sock, MY_ADDR);
+      const uint8_t over = (uint8_t)(maxPayload + 1);
+      std::vector<uint8_t> big(over);
+      for (uint8_t i = 0; i < over; i++) big[i] = (uint8_t)(0xA0 + i);
+      std::vector<uint8_t> msg = socket_msg(OTHER_ADDR, MY_ADDR, big.data(), over);
+      std::vector<uint8_t> framed = wire_frame(msg.data(), (uint8_t)msg.size());
+      Serial.feed(framed.data(), framed.size());
+
+      unsigned int retlen = 0;
+      CHECK(sock.getMsg(MY_ADDR, &retlen) == NULL, "a 58-byte payload overflows and is not delivered");
+      CHECK(retlen == 0, "and retlen is cleared");
+      CHECK(sock.getFramingErrorCount() >= 1, "and the overflow is counted, not silent");
+
+      // ...and the receiver is not wedged by it: a normal frame straight after still arrives. This is
+      // the half that matters in the field -- an oversized frame must cost one packet, not the link.
+      std::vector<uint8_t> ok = socket_msg(OTHER_ADDR, MY_ADDR, PAYLOAD, sizeof(PAYLOAD));
+      std::vector<uint8_t> okFramed = wire_frame(ok.data(), (uint8_t)ok.size());
+      Serial.feed(okFramed.data(), okFramed.size());
+      retlen = 0;
+      CHECK(sock.getMsg(MY_ADDR, &retlen) != NULL, "and the socket recovers for the next frame");
+    }
+  }
+
   printf("\n%d checks, %d failures\n", checks, failures);
   printf(failures ? "SOME TESTS FAILED\n" : "ALL TESTS PASSED\n");
   return failures ? 1 : 0;
