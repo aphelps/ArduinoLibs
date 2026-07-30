@@ -1,7 +1,10 @@
 //
 // rs485_receive_test.cpp — host unit tests for the RS485 receive path.
 //
-// Build/run:  make -C ArduinoLibs test
+// Build/run:  make -C ArduinoLibs/test        (or `make test-libs` from the super-repo)
+//
+// NOT `make -C ArduinoLibs test`: there is no Makefile at the ArduinoLibs root, so that exits 0
+// having run nothing -- a false SUCCESS indistinguishable from a passing suite.
 //
 // Why this exists: every defect covered here is a *negative* — "the bad thing no longer happens" —
 // and three of the four are pure state-machine behaviour reachable only through specific byte

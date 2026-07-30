@@ -4,7 +4,11 @@
 #   make            build and run everything
 #   make clean
 #
-# From the super-repo you can also use `make -C ArduinoLibs test`.
+# From the super-repo, `make test-libs` (or plain `make test`) runs this.
+#
+# NB `make -C ArduinoLibs test` does NOT work: there is no Makefile at the ArduinoLibs root, so it
+# prints "Nothing to be done for `test'" and exits 0 -- a false SUCCESS that looks like a passing
+# suite. Use `make -C ArduinoLibs/test` if you want to invoke it by path.
 #
 # -DRS485_HARDWARE_SERIAL is REQUIRED, not optional: RS485Utils.h sets RS485UTILS_SUPPORTED to 1 only
 # for `defined(RS485_HARDWARE_SERIAL)` or `defined(__AVR__)`, and otherwise #if-s the entire library
