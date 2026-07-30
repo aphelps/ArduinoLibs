@@ -63,7 +63,25 @@
 // "Invalid address"
 #define RS485_ADDR_INVALID SOCKET_ADDR_INVALID
 
-typedef struct {
+/*
+ * The on-wire socket header: 7 bytes, on every target.
+ *
+ * PACKED IS LOAD-BEARING, not a micro-optimisation. sizeof() here is what positions the payload at
+ * both ends — sendMsgTo() writes the header at (data - sizeof(hdr)) and puts sizeof(hdr) + datalength
+ * on the wire, and getMsg() reads the payload from msg->data. Unpacked, that size is 7 on AVR
+ * (alignment 1) but 8 on any 2-byte-aligned ABI, which rounds 7 up to a trailing pad byte. An ESP32
+ * would then emit [7 header][1 pad][payload] while an ATMega328 module reads the payload from offset
+ * 7 — every frame between the two misparsed by one byte, in both directions. Packing makes the
+ * 32-bit layout match the deployed AVR fleet's, which is the one that defines the wire; it is
+ * layout-neutral on AVR (nothing there was padded to begin with), and the static_asserts below say so
+ * rather than leaving it to be trusted.
+ *
+ * Field offsets were already identical across ABIs; only the size differed. Packing also makes the
+ * three places that cast a raw buffer straight to this struct (sendMsgTo, getMsg, headerFromData)
+ * unconditionally safe: with alignment 1 the compiler emits byte-wise accesses, where before the
+ * 16-bit source/address loads were correctly aligned only by accident of where the buffer landed.
+ */
+typedef struct __attribute__((__packed__)) {
   byte     ID;
   byte     length;
 	socket_addr_t source;
@@ -74,10 +92,32 @@ typedef struct {
 /* Calculate the total buffer size with a useable buffer of size x */
 #define RS485_BUFFER_TOTAL(x) (x + sizeof (rs485_socket_hdr_t))
 
-typedef struct {
+typedef struct __attribute__((__packed__)) {
   rs485_socket_hdr_t hdr;
   byte               data[];
 } rs485_socket_msg_t;
+
+/*
+ * Pin the layout so a future ABI, a reordered field or a dropped attribute fails the build instead of
+ * silently breaking interoperability with modules already in the field. The size assert is the one
+ * that matters for the wire; the offsets are asserted because they are what every cast through
+ * rs485_socket_msg_t depends on.
+ *
+ * offsetof() on the flexible array member `data` is a GCC extension, and is what actually pins the
+ * payload origin. Kept alongside the sizeof so the two can never drift apart.
+ */
+#if defined(__cplusplus) && __cplusplus >= 201103L
+#include <stddef.h>
+static_assert(sizeof(rs485_socket_hdr_t) == 7,
+              "rs485_socket_hdr_t must be 7 bytes on the wire (AVR layout) on every target");
+static_assert(offsetof(rs485_socket_hdr_t, ID)      == 0, "rs485 socket hdr: ID at 0");
+static_assert(offsetof(rs485_socket_hdr_t, length)  == 1, "rs485 socket hdr: length at 1");
+static_assert(offsetof(rs485_socket_hdr_t, source)  == 2, "rs485 socket hdr: source at 2");
+static_assert(offsetof(rs485_socket_hdr_t, address) == 4, "rs485 socket hdr: address at 4");
+static_assert(offsetof(rs485_socket_hdr_t, flags)   == 6, "rs485 socket hdr: flags at 6");
+static_assert(sizeof(rs485_socket_msg_t) == 7, "rs485_socket_msg_t is header-sized (data[] is a FAM)");
+static_assert(offsetof(rs485_socket_msg_t, data) == 7, "rs485 socket payload starts at offset 7");
+#endif
 
 // Get the socket header from the data portion of a message
 #define RS485_HDR_FROM_DATA(x) ((rs485_socket_hdr_t *)((long)x - sizeof (rs485_socket_hdr_t))) // DEPRECATED
