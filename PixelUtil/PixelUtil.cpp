@@ -89,6 +89,13 @@ uint16_t PixelUtil::numPixels()
   return num_pixels;
 }
 
+/*
+ * The three led-indexed setters below deliberately do NOT bounds-check: they
+ * are the inner loop of every effect on the ATMega328, and their callers own
+ * the loop bounds. Callers passing an untrusted index must validate it against
+ * numPixels() first. The PRGB* overload below, and setRangeRGB()/setDistinct()/
+ * getColor(), DO check -- the asymmetry is deliberate, not an oversight.
+ */
 void PixelUtil::setPixelRGB(uint16_t led, byte r, byte g, byte b)
 {
   leds[led] = CRGB(r, g, b);
@@ -119,12 +126,33 @@ void PixelUtil::setAllRGB(uint32_t color)
   fill_solid(leds, numPixels(), color);
 }
 
+/*
+ * Set a range of pixels to a color.
+ *
+ * Semantics:
+ *   - length == 0 means the WHOLE strip (0..numPixels()-1), regardless of start.
+ *     This is load-bearing: HMTLprotocol.py zero-fills unspecified program
+ *     bytes, so a color program sent with just an RGB triple arrives as {0, 0}.
+ *   - start >= numPixels() draws nothing. (It used to clamp length to a value
+ *     that wrapped negative and walk fill_solid off the array -- or, for
+ *     start == numPixels() exactly, accidentally flood the whole strip.)
+ *   - An over-long range is clamped to the end of the strip.
+ *
+ * The arithmetic is deliberately done in uint16_t, computed from the available
+ * span, so it cannot wrap for any input at either PIXEL_ADDR_TYPE width -- on
+ * AVR (16-bit int) `start + length` in uint16_t can itself wrap, so the sum is
+ * never formed.
+ */
 void PixelUtil::setRangeRGB(pixel_range_t range, CRGB crgb) {
-  if (range.start + range.length > numPixels()) {
-    range.length = numPixels() - range.start;
+  uint16_t num = numPixels();
+  if (range.length == 0) { setAllRGB(crgb.r, crgb.g, crgb.b); return; }  // 0 == whole strip
+  if (range.start >= num) {                                             // nothing to draw
+    DEBUG1_VALUELN("setRangeRGB: start past end:", range.start);
+    return;
   }
-  if (range.length == 0) setAllRGB(crgb.r, crgb.g, crgb.b);
-  else fill_solid(leds + range.start, range.length, crgb);
+  uint16_t avail = num - (uint16_t)range.start;                         // >= 1
+  uint16_t len   = (range.length < avail) ? range.length : avail;
+  fill_solid(leds + range.start, len, crgb);
 }
 
 /**
@@ -140,11 +168,16 @@ void PixelUtil::setBrightness(uint8_t brightness) {
  * value is a distinct led rather than RGB pixels.
  */
 void PixelUtil::setDistinct(PIXEL_ADDR_TYPE led, byte value){
+  // Bounds-checked: each pixel holds 3 distinct values, so the valid range is
+  // led < numPixels() * 3. Compared via division so the product cannot wrap.
+  if (led / (PIXEL_ADDR_TYPE)3 >= num_pixels) return;
   leds[led / (PIXEL_ADDR_TYPE)3][led % 3] = value;
 }
 
 
 uint32_t PixelUtil::getColor(uint16_t led) {
+  // Bounds-checked: out-of-range reads return black rather than heap garbage.
+  if (led >= numPixels()) return 0;
   return pixel_color(leds[led].r, leds[led].g, leds[led].b);
 }
 
