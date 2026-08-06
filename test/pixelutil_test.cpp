@@ -75,6 +75,7 @@ void *operator new[](size_t n) {
     if (p == NULL) abort();
     return p;
   }
+  if (g_raw != NULL) abort();  // one tracked allocation at a time -- a second would corrupt the harness
   unsigned char *raw = (unsigned char *)malloc(FRONT_PAD + n + TRAIL_PAD);
   if (raw == NULL) abort();
   memset(raw, SENTINEL, FRONT_PAD);
@@ -192,6 +193,20 @@ int main(void) {
     pixels.setRangeRGB(range, CRGB(0xFF, 0x00, 0x00));
     CHECK(count_pixels_with(pixels, BASELINE) == NUM, "start=1000,len=5: no pixel was written");
     CHECK(sentinels_intact(), "start=1000,len=5: sentinels intact");
+  }
+
+  // The AVR clamp-skip shape: on the old code, with 16-bit int, `start + length` for
+  // {65535, 2} wrapped modulo 65536 and skipped the clamp entirely -- the second overflow
+  // path the rewrite closes by never forming the sum. On the host it is just another
+  // start >= num no-op; pinned here so the shape stays covered.
+  {
+    paint_baseline(pixels);
+    pixel_range_t range;
+    range.start  = 65535;
+    range.length = 2;
+    pixels.setRangeRGB(range, CRGB(0xFF, 0x00, 0x00));
+    CHECK(count_pixels_with(pixels, BASELINE) == NUM, "start=65535,len=2: no pixel was written");
+    CHECK(sentinels_intact(), "start=65535,len=2: sentinels intact (old code skipped the clamp on AVR)");
   }
 #endif
 
@@ -341,6 +356,9 @@ int main(void) {
     prgb.pixel = 200;
     pixels.setPixelRGB(&prgb);
     CHECK(count_pixels_with(pixels, BASELINE) == NUM, "setPixelRGB(PRGB*) ignores pixel=200");
+    prgb.pixel = NUM;  // exact boundary: pins the < vs <= off-by-one in the bounds check
+    pixels.setPixelRGB(&prgb);
+    CHECK(count_pixels_with(pixels, BASELINE) == NUM, "setPixelRGB(PRGB*) ignores pixel==num (exact boundary)");
     prgb.pixel = 3;
     pixels.setPixelRGB(&prgb);
     CHECK(pixels.getColor(3) == 0xAABBCC, "setPixelRGB(PRGB*) writes pixel 3");
