@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="ArduinoLibs"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="ArduinoLibs">
+				<Option output="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/ArduinoLibs" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Applications/Arduino_1.6.13.app/Contents/Java/hardware/arduino/avr/cores/arduino"/>
+					<Add directory="/Applications/Arduino_1.6.13.app/Contents/Java/hardware/arduino/avr/libraries/EEPROM"/>
+					<Add directory="/Applications/Arduino_1.6.13.app/Contents/Java/hardware/arduino/avr/libraries/SoftwareSerial"/>
+					<Add directory="/Applications/Arduino_1.6.13.app/Contents/Java/hardware/arduino/avr/libraries/SPI"/>
+					<Add directory="/Applications/Arduino_1.6.13.app/Contents/Java/hardware/arduino/avr/libraries/Wire"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/FastLED"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RFM69"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RS485_non_blocking"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Xbee"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/Debug"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/MPR121"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/PixelUtil"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/RFM69Socket"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/RS485Utils"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/SerialCLI"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/Socket"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.0.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 ArduinoLibs"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="ArduinoLibs/fast">
+				<Option output="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/ArduinoLibs" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Applications/Arduino_1.6.13.app/Contents/Java/hardware/arduino/avr/cores/arduino"/>
+					<Add directory="/Applications/Arduino_1.6.13.app/Contents/Java/hardware/arduino/avr/libraries/EEPROM"/>
+					<Add directory="/Applications/Arduino_1.6.13.app/Contents/Java/hardware/arduino/avr/libraries/SoftwareSerial"/>
+					<Add directory="/Applications/Arduino_1.6.13.app/Contents/Java/hardware/arduino/avr/libraries/SPI"/>
+					<Add directory="/Applications/Arduino_1.6.13.app/Contents/Java/hardware/arduino/avr/libraries/Wire"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/FastLED"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RFM69"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RS485_non_blocking"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Xbee"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/Debug"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/MPR121"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/PixelUtil"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/RFM69Socket"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/RS485Utils"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/SerialCLI"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/ArduinoLibs/Socket"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.0.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 ArduinoLibs/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Debug/Debug.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Debug/Debug.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Debug/README.md">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Debug/examples/DebugExample/DebugExample.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Debug/library.json">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/EEPromUtils/EEPromUtils.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/EEPromUtils/EEPromUtils.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/EEPromUtils/README.md">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/EEPromUtils/library.json">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/GeneralUtils/GeneralUtils.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/GeneralUtils/GeneralUtils.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/LCD/LCD.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/LCD/LCD.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/MPR121/MPR121.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/MPR121/MPR121.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/MPR121/README.md">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/MPR121/examples/MPR121BasicUse/MPR121BasicUse.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/MPR121/examples/MPR121Multiple/MPR121Multiple.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/MPR121/library.json">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Menu/Menu.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Menu/Menu.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Pins/Actions.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Pins/Pins.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Pins/Pins.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/PixelUtil/PixelUtil.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/PixelUtil/PixelUtil.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/PixelUtil/PixelUtil_config.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/PixelUtil/examples/PixelExample/PixelExample.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/README.md">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RFM69Socket/RFM69Socket.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RFM69Socket/RFM69Socket.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RFM69Socket/examples/RFM69_SocketTool/RFM69_SocketTool.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RFM69Socket/examples/RFM69_Tool/RFM69_Tool.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RFM69Socket/examples/RawGateway/RawGateway.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RFM69Socket/examples/RawNode/RawNode.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RS485Utils/README.txt">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RS485Utils/RS485Utils.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RS485Utils/RS485Utils.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RS485Utils/examples/RawSerial/README.txt">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RS485Utils/examples/RawSerial/SerialMaster/SerialMaster.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RS485Utils/examples/RawSerial/SerialSlave/SerialSlave.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RS485Utils/examples/RawSerial/SerialTest/SerialTest.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RS485Utils/examples/SocketTest/SocketTestMaster/SocketTestMaster.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/RS485Utils/examples/SocketTest/SocketTestSlave/SocketTestSlave.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/SerialCLI/README.md">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/SerialCLI/SerialCLI.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/SerialCLI/SerialCLI.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/SerialCLI/examples/ExampleCLI/ExampleCLI.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/SerialCLI/library.json">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Shift/Shift.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Shift/Shift.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/ShiftBar/ShiftBar.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/ShiftBar/ShiftBar.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/Socket/Socket.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/XBeeSocket/XBeeSocket.cpp">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/XBeeSocket/XBeeSocket.h">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/XBeeSocket/examples/XBeeSocketTest/XBeeSocketTest.ino">
+			<Option target="ArduinoLibs"/>
+		</Unit>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

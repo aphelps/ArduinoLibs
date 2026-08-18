@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="HMTL_Fire_Control"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="HMTL_Fire_Control">
+				<Option output="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/HMTL_Fire_Control" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Applications/Arduino_1.6.5.app/Contents/Java/hardware/arduino/avr/cores/arduino"/>
+					<Add directory="/Applications/Arduino_1.6.5.app/Contents/Java/hardware/arduino/avr/libraries/EEPROM"/>
+					<Add directory="/Applications/Arduino_1.6.5.app/Contents/Java/hardware/arduino/avr/libraries/SoftwareSerial"/>
+					<Add directory="/Applications/Arduino_1.6.5.app/Contents/Java/hardware/arduino/avr/libraries/SPI"/>
+					<Add directory="/Applications/Arduino_1.6.5.app/Contents/Java/hardware/arduino/avr/libraries/Wire"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/AFMotor"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Adafruit_GFX"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Adafruit_LEDBackpack"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Adafruit_MAX31885"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Adafruit_MPR121_Library"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Adafruit_WS2801"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/CapacitiveSensor"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/CubeLibrary"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Debug"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/EEPromUtils"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/FastLED"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/GeneralUtils"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/HMTLMessaging"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/HMTLPoofer"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/HMTLTypes"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/HMTLprotocol"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/LCD"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/LiquidCrystal"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/LiquidTWI"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/MPR121"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Menu"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/MessageHandler"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Morse"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/NewPing"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/ObjectLibrary"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Pins"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/PixelUtil"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RFM69"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RS485Utils"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RS485_non_blocking"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RS485_protocol"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/SPIFlash"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/SerialCLI"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Shift"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/ShiftBar"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Socket"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Switch"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/TimeSync"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Tlc5940"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/TriangleLibrary"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/XBeeSocket"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Xbee"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/blynk-library"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/ffft"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/globals"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/test"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/8.0.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 HMTL_Fire_Control"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="HMTL_Fire_Control/fast">
+				<Option output="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/HMTL_Fire_Control" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Applications/Arduino_1.6.5.app/Contents/Java/hardware/arduino/avr/cores/arduino"/>
+					<Add directory="/Applications/Arduino_1.6.5.app/Contents/Java/hardware/arduino/avr/libraries/EEPROM"/>
+					<Add directory="/Applications/Arduino_1.6.5.app/Contents/Java/hardware/arduino/avr/libraries/SoftwareSerial"/>
+					<Add directory="/Applications/Arduino_1.6.5.app/Contents/Java/hardware/arduino/avr/libraries/SPI"/>
+					<Add directory="/Applications/Arduino_1.6.5.app/Contents/Java/hardware/arduino/avr/libraries/Wire"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/AFMotor"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Adafruit_GFX"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Adafruit_LEDBackpack"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Adafruit_MAX31885"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Adafruit_MPR121_Library"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Adafruit_WS2801"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/CapacitiveSensor"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/CubeLibrary"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Debug"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/EEPromUtils"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/FastLED"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/GeneralUtils"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/HMTLMessaging"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/HMTLPoofer"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/HMTLTypes"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/HMTLprotocol"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/LCD"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/LiquidCrystal"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/LiquidTWI"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/MPR121"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Menu"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/MessageHandler"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Morse"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/NewPing"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/ObjectLibrary"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Pins"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/PixelUtil"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RFM69"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RS485Utils"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RS485_non_blocking"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/RS485_protocol"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/SPIFlash"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/SerialCLI"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Shift"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/ShiftBar"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Socket"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Switch"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/TimeSync"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Tlc5940"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/TriangleLibrary"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/XBeeSocket"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/Xbee"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/blynk-library"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/ffft"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/globals"/>
+					<Add directory="/Users/amp/Dropbox/Arduino/libraries/test"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/8.0.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 HMTL_Fire_Control/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/amp/Dropbox/Arduino/ArduinoLibs/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/amp/Dropbox/Arduino/ArduinoLibs/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

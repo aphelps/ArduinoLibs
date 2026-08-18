@@ -39,15 +39,16 @@
  */
 MPR121 *cap[2] = {NULL, NULL};
 #ifdef ARDUINO_ARCH_ESP32
+/*
+ * No critical section: noInterrupts()/interrupts() are task-context macros
+ * and are not safe inside an IRAM ISR.  A single volatile bool store for a
+ * loop-context reader needs no protection.
+ */
 void IRAM_ATTR irqTriggered0() {
-  noInterrupts();
   if (cap[0] != NULL) cap[0]->triggered = true;
-  interrupts();
 }
 void IRAM_ATTR irqTriggered1() {
-  noInterrupts();
   if (cap[1] != NULL) cap[1]->triggered = true;
-  interrupts();
 }
 #else
 void irqTriggered0() {
