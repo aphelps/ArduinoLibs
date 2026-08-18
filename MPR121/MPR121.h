@@ -191,7 +191,12 @@ class MPR121
   boolean read_register(uint8_t r, byte* result);
   boolean read16(uint8_t r, uint16_t *result);
 
-  boolean triggered; // XXX - Combine booleans into bitflags
+  /*
+   * Set from the IRQ handler, consumed in loop context.  volatile is required
+   * for that cross-context handoff; no critical section is needed for a
+   * single-writer single-reader bool.
+   */
+  volatile boolean triggered;
   boolean useInterrupt; // XXX
  private:
   boolean initialized; // XXX
