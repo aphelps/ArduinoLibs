@@ -59,6 +59,18 @@ inline void *test_malloc(size_t n) {
 #define malloc(n) test_malloc(n)
 
 // ---------------------------------------------------------------------------------------------
+// map()
+// ---------------------------------------------------------------------------------------------
+// The Arduino core's integer re-range, transcribed exactly (including its truncating division and
+// its lack of clamping). PixelUtil.cpp's colour helpers -- pixel_primary, pixel_secondary,
+// pixel_heat, pixel_heat_discreet -- call it, so without this the whole file fails to compile with
+// "use of undeclared identifier 'map'". Not a behavioural stand-in: it is the same expression the
+// core uses, so those helpers pick the same colour here as on a device.
+inline long map(long x, long in_min, long in_max, long out_min, long out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+// ---------------------------------------------------------------------------------------------
 // GPIO stubs
 // ---------------------------------------------------------------------------------------------
 // RS485Socket drives the DE/RE enable pin around every transmission. Recorded rather than ignored so
