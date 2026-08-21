@@ -67,6 +67,7 @@ void irqTriggered1() {
 MPR121::MPR121() {
   initialized = false;
   triggered = false;
+  read_ok = true;
   useInterrupt = false;
   irqpin = false;
   touchTimes = NULL;
@@ -107,6 +108,7 @@ void MPR121::init(byte _irqpin, boolean _useInterrupt, byte _address,
   } else {
 
     triggered = true;
+    read_ok = true;
 
     irqpin = _irqpin;
     useInterrupt = _useInterrupt;
@@ -339,6 +341,16 @@ boolean MPR121::readTouchInputs() {
    * The prevStates are used to determine if values have changed since the
    * previous call and so should be updated regardless of whether IRQ was
    * triggered.
+   *
+   * This sync stays unconditional, including on the read-failure path below.
+   * Moving it into the success path would leave prevStates != touchStates
+   * across every failed read, so changed() would keep reporting the LAST
+   * successful edge on every call until the device recovers.  For a consumer
+   * that acts on changed() -- fire control re-sends a poof pulse -- that turns
+   * one stale reading into a repeated command.  A failed read yields no new
+   * information, so reporting "no edge" is correct; the fact that the data is
+   * untrustworthy is reported separately by readOk() below, which is what
+   * consumers must check.
    */
   prevStates = touchStates;
 
@@ -350,8 +362,27 @@ boolean MPR121::readTouchInputs() {
 
     if (Wire.available() < 2) {
       DEBUG4_PRINTLN("No response from MPR121");
+
+      /*
+       * The chip holds its IRQ line asserted until a successful status read.
+       * Having cleared `triggered` above, an edge-triggered IRQ will never
+       * deliver another edge, so without this restore the driver is wedged
+       * permanently: no further read is even attempted and touchStates keeps
+       * its last good (stale) value forever.
+       *
+       * Restore it rather than moving the clear below the read.  `triggered`
+       * is written from an ISR, and clearing it BEFORE the transaction is
+       * deliberately race-free -- an IRQ arriving mid-read is preserved.
+       * Clearing it after the read would swallow any edge landing between the
+       * read completing and the store, including a RELEASE edge, which is
+       * exactly the event whose loss causes a poof to stick on.
+       */
+      triggered = true;
+      read_ok = false;
       return false;
     }
+
+    read_ok = true;
 
     byte LSB = Wire.read();
     byte MSB = Wire.read();
@@ -368,7 +399,7 @@ boolean MPR121::readTouchInputs() {
                         DEBUG5_VALUELN("Touched pin ", i);
                       }
                     } else {
-                      if (touched(i)) {
+                      if (previous(i)) {
                         //pin i is no longer being touched
                         DEBUG5_VALUELN("Released pin ", i);
                       }

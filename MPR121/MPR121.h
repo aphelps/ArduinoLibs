@@ -19,6 +19,19 @@
 #ifndef MPR121_H
 #define MPR121_H
 
+/*
+ * Signals that this library reports read health via readOk()/readFailed() and
+ * that a failed read restores `triggered` so the read is retried rather than
+ * leaving the driver wedged on a stale touch state.
+ *
+ * Consumers whose safety behaviour depends on detecting a failed read must
+ * #error on the absence of this macro.  Building such a consumer against an
+ * older MPR121 would compile cleanly and silently ship a fail-safe that can
+ * never fire, because the wedge it exists to catch also stops any read from
+ * being attempted.
+ */
+#define MPR121_HAS_READ_HEALTH 1
+
 #define TS1 0x00
 #define TS2 0x01
 #define OORS1 0x02
@@ -172,6 +185,23 @@ class MPR121
   void disable();
 
   boolean readTouchInputs();
+
+  /*
+   * Health of the most recent attempted read.  readTouchInputs() returns false
+   * both for "nothing changed" and for "the read failed"; these distinguish
+   * the two.  touched()/changed() are only meaningful while readOk() is true.
+   */
+  boolean readOk()     { return read_ok; }
+  boolean readFailed() { return !read_ok; }
+
+  /*
+   * Force the next readTouchInputs() to attempt an I2C transaction even if no
+   * IRQ edge has arrived.  Without this a caller cannot age-out a silent
+   * device: reads only happen when `triggered` is set, so on an idle panel no
+   * read is attempted and "time since last successful read" grows without
+   * bound during normal operation.
+   */
+  void forceRead() { triggered = true; }
   boolean touched(byte sensor);
   boolean previous(byte sensor);
   boolean changed(byte sensor);
@@ -200,6 +230,7 @@ class MPR121
   boolean useInterrupt; // XXX
  private:
   boolean initialized; // XXX
+  boolean read_ok;
   byte address;
   byte irqpin;
 
@@ -265,13 +296,22 @@ class MPR121
 #define INTERUPT_4_PIN -1
 #define INTERUPT_5_PIN -1
 #else
-// Unknown board: define as -1 (useInterrupt will be forced false)
+/*
+ * Unknown board: no pin is a valid interrupt pin, so init() must fall through to its default case
+ * and force useInterrupt false.
+ *
+ * The values are DISTINCT negatives rather than all -1.  init() switches on irqpin with
+ * `case INTERUPT_0_PIN:` and `case INTERUPT_1_PIN:` as separate labels, and two labels with the same
+ * value is a hard compile error -- so an all -1 block made the library impossible to compile for any
+ * target that is neither AVR nor ESP32, host unit tests included.  irqpin is a byte and can never be
+ * negative, so distinct negatives select the default case exactly as intended.
+ */
 #define INTERUPT_0_PIN -1
-#define INTERUPT_1_PIN -1
-#define INTERUPT_2_PIN -1
-#define INTERUPT_3_PIN -1
-#define INTERUPT_4_PIN -1
-#define INTERUPT_5_PIN -1
+#define INTERUPT_1_PIN -2
+#define INTERUPT_2_PIN -3
+#define INTERUPT_3_PIN -4
+#define INTERUPT_4_PIN -5
+#define INTERUPT_5_PIN -6
 #endif
 
 /******************************************************************************
