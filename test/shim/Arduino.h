@@ -18,9 +18,11 @@
 //
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <deque>
+#include <string>
 
 typedef uint8_t  byte;
 typedef bool     boolean;
@@ -81,15 +83,65 @@ inline void digitalWrite(uint8_t pin, uint8_t val) { if (pin < 64) test_pin_stat
 inline int  digitalRead(uint8_t pin) { return (pin < 64) ? test_pin_state[pin] : 0; }
 
 // ---------------------------------------------------------------------------------------------
+// Interrupt stubs
+// ---------------------------------------------------------------------------------------------
+// MPR121::init() attaches an IRQ handler and its readTouchInputs() path is written around a
+// `volatile boolean triggered` that a real ISR sets. On the host nothing fires, so attachInterrupt
+// records the handler and the tests raise the flag themselves -- which is the honest model: a test
+// that could not set `triggered` independently of a successful read could not express the wedge
+// (IRQ held asserted, no further edge ever delivered) that these tests exist to pin.
+#define INPUT_PULLUP 2
+#define RISING  3
+#define FALLING 2
+#define CHANGE  1
+typedef void (*test_isr_t)(void);
+extern test_isr_t test_attached_isr[4];
+inline int  digitalPinToInterrupt(uint8_t pin) { return pin; }
+inline void attachInterrupt(int irq, test_isr_t fn, int) {
+  if (irq >= 0 && irq < 4) test_attached_isr[irq] = fn;
+}
+inline void noInterrupts() {}
+inline void interrupts() {}
+
+// ---------------------------------------------------------------------------------------------
 // HardwareSerial as a pair of byte queues
 // ---------------------------------------------------------------------------------------------
 // rx  — what the test says arrived on the wire; the library reads from here.
 // tx  — what the library wrote; the test inspects it.
+// print()/println() additionally append to test_debug_output. The Debug.h macros write through
+// Serial, and MPR121.cpp self-defaults DEBUG_LEVEL to DEBUG_MID when the consumer sets none -- so
+// unlike the RS485 suite, its debug path is COMPILED IN by default and has to go somewhere. Capturing
+// it also makes the tracing itself testable, which matters when the tracing is the diagnostic: a
+// debug line inside a branch that can never be reached prints nothing and looks exactly like a
+// device that never did the thing.
+extern std::string test_debug_output;
+inline void test_debug_clear() { test_debug_output.clear(); }
+inline bool test_debug_contains(const char *needle) {
+  return test_debug_output.find(needle) != std::string::npos;
+}
+
+#define HEX 16
+#define DEC 10
+#define F(x) (x)
+
 class HardwareSerial {
  public:
   std::deque<uint8_t> rx;
   std::deque<uint8_t> tx;
   bool flushed = false;
+
+  void print(const char *s)      { test_debug_output += s; }
+  void print(char c)             { test_debug_output += c; }
+  void print(int v, int = DEC)   { append_num((long)v); }
+  void print(long v, int = DEC)  { append_num(v); }
+  void print(unsigned v, int = DEC)       { append_num((long)v); }
+  void print(unsigned long v, int = DEC)  { append_num((long)v); }
+  void println()                 { test_debug_output += "\n"; }
+  void println(const char *s)    { print(s); println(); }
+  void println(int v, int r = DEC)  { print(v, r); println(); }
+  void println(long v, int r = DEC) { print(v, r); println(); }
+  void println(unsigned v, int r = DEC)      { print(v, r); println(); }
+  void println(unsigned long v, int r = DEC) { print(v, r); println(); }
 
   void begin(unsigned long) {}
   int  available() { return (int)rx.size(); }
@@ -101,6 +153,11 @@ class HardwareSerial {
   }
   size_t write(uint8_t b) { tx.push_back(b); return 1; }
   void   flush() { flushed = true; }
+
+ private:
+  void append_num(long v) { char b[24]; snprintf(b, sizeof(b), "%ld", v); test_debug_output += b; }
+
+ public:
 
   // Test-side helpers.
   void feed(uint8_t b)                        { rx.push_back(b); }

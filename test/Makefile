@@ -54,7 +54,29 @@ PIXEL_INCLUDES := -I shim -I $(ROOT)/PixelUtil -I $(ROOT)/Debug
 PIXEL_DEFINES  := -DPIXELS_WS2812B_3
 PIXEL_TESTS    := pixelutil_test pixelutil_test_big
 
-BINARIES := $(addprefix $(BUILD)/,$(TESTS) $(PIXEL_TESTS))
+# MPR121, built on its own include set.
+#
+# Not folded into the generic rule: MPR121.cpp needs the Wire shim, and $(SOURCES) would relink the
+# RS485 library into a test that has nothing to do with it -- the same reason PixelUtil is separate.
+#
+# DEBUG_LEVEL stays undefined, matching the RS485 suite. That is the release configuration, which is
+# the one that ships; the DEBUG5 touch/release tracing in readTouchInputs() compiles out entirely.
+MPR121_SOURCES  := $(ROOT)/MPR121/MPR121.cpp
+MPR121_INCLUDES := -I shim -I $(ROOT)/MPR121 -I $(ROOT)/Debug
+#
+# Built TWICE, like PixelUtil and for the same reason: the two configurations differ by a -D that
+# changes which code exists.
+#
+#   mpr121_test        -- MPR121.cpp self-defaults DEBUG_LEVEL to DEBUG_MID when the consumer sets
+#                         none, so this is the configuration that actually ships for callers that
+#                         say nothing. Its DEBUG5 touch/release tracing is compiled out.
+#   mpr121_test_trace  -- DEBUG_LEVEL_MPR121=5, the only configuration in which that tracing exists.
+#                         Without this binary the release-trace assertions are unreachable and a
+#                         regression to the unreachable-branch form would go unnoticed: it was
+#                         verified by mutation that reverting that fix fails ONLY here.
+MPR121_TESTS    := mpr121_test mpr121_test_trace
+
+BINARIES := $(addprefix $(BUILD)/,$(TESTS) $(PIXEL_TESTS) $(MPR121_TESTS))
 
 .PHONY: all test clean
 all: test
@@ -75,6 +97,12 @@ $(BUILD)/pixelutil_test: pixelutil_test.cpp $(PIXEL_SOURCES) shim/Arduino.h shim
 
 $(BUILD)/pixelutil_test_big: pixelutil_test.cpp $(PIXEL_SOURCES) shim/Arduino.h shim/FastLED.h | $(BUILD)
 	$(CXX) $(CXXFLAGS) $(PIXEL_DEFINES) -DBIG_PIXELS $(PIXEL_INCLUDES) -o $@ $< $(PIXEL_SOURCES)
+
+$(BUILD)/mpr121_test: mpr121_test.cpp $(MPR121_SOURCES) shim/Arduino.h shim/Wire.h | $(BUILD)
+	$(CXX) $(CXXFLAGS) $(MPR121_INCLUDES) -o $@ $< $(MPR121_SOURCES)
+
+$(BUILD)/mpr121_test_trace: mpr121_test.cpp $(MPR121_SOURCES) shim/Arduino.h shim/Wire.h | $(BUILD)
+	$(CXX) $(CXXFLAGS) -DDEBUG_LEVEL_MPR121=5 $(MPR121_INCLUDES) -o $@ $< $(MPR121_SOURCES)
 
 $(BUILD):
 	@mkdir -p $(BUILD)
