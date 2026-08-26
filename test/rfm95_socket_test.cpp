@@ -412,6 +412,60 @@ int main(void) {
     CHECK(got && memcmp(got, big.data(), big.size()) == 0, "and its bytes intact");
   }
 
+  // -------------------------------------------------------------------------------------------
+  // Oversized TRANSMIT -- the half the max-size block above did not cover, and a real defect
+  // -------------------------------------------------------------------------------------------
+  // Found in post-PR self-review. Everything above tested the maximum-size RECEIVE path; nothing
+  // tested transmit, and transmit is where the arithmetic breaks:
+  //
+  //   RFM95_BUFFER_TOTAL() casts to uint8_t, `datalength` is a byte because Socket pins it to one,
+  //   so 250 gives a total of 0 and 255 gives 5. Before the bounds check, sendMsgTo(..., 250) put an
+  //   EMPTY frame on the air and sendMsgTo(..., 255) put a 5-byte RUNT there -- the exact shape
+  //   getMsg()'s unconditional length check exists to reject. The library was manufacturing the
+  //   frames its own receive path defends against, and reporting success.
+  //
+  // RFM69Socket cannot reach this (61-byte ceiling). It is reachable here only because
+  // RFM95_MAX_PACKET is exactly 255.
+  {
+    RFM95Socket sock;
+    fresh_socket(sock, MY_ADDR);
+    byte buf[300];
+    byte *data = sock.initBuffer(buf, 262);
+    memset(data, 0xAA, 255);
+
+    // The boundary itself must still work.
+    sock.sendMsgTo(OTHER_ADDR, data, RFM95_MAX_DATA_LEN);
+    CHECK(LoRa.tx_packets.size() == 1 && LoRa.tx_packets[0].size() == 255,
+          "249 bytes -- the maximum -- still transmits as a full 255-byte frame");
+
+    // 250: total wraps to 0.
+    LoRa.tx_packets.clear();
+    sock.sendMsgTo(OTHER_ADDR, data, 250);
+    CHECK(LoRa.tx_packets.empty(), "250 bytes is dropped, not sent as an empty frame");
+
+    // 255: total wraps to 5, which is shorter than the header.
+    LoRa.tx_packets.clear();
+    sock.sendMsgTo(OTHER_ADDR, data, 255);
+    CHECK(LoRa.tx_packets.empty(), "255 bytes is dropped, not sent as a 5-byte runt");
+
+    // A drop must cost one message, not the link.
+    LoRa.tx_packets.clear();
+    sock.sendMsgTo(OTHER_ADDR, data, 4);
+    CHECK(LoRa.tx_packets.size() == 1 && LoRa.tx_packets[0].size() == 10,
+          "and a normal send straight after an oversized one still works");
+  }
+
+  // initBuffer with a buffer smaller than the header: the subtraction underflows uint16_t, so a
+  // caller passing 0 was told 65530 bytes were available and handed a pointer past its own array.
+  {
+    RFM95Socket sock;
+    fresh_socket(sock, MY_ADDR);
+    byte tiny[4];
+    byte *d = sock.initBuffer(tiny, sizeof(tiny));
+    CHECK(sock.send_data_size == 0, "a sub-header buffer reports zero usable bytes, not 65530");
+    CHECK(d == tiny, "and does not hand back a pointer past the end of it");
+  }
+
   printf("\n%d checks, %d failures\n", checks, failures);
   printf(failures ? "SOME TESTS FAILED\n" : "ALL TESTS PASSED\n");
   return failures ? 1 : 0;

@@ -144,6 +144,13 @@ Maximum payload is **249 bytes** (255-byte LoRa frame minus the 6-byte header). 
 takes `const byte length` and `Socket::getLength` returns `byte`, so the base class already pins a
 payload to one byte; there is no field here to widen for a larger MTU.
 
+`sendMsgTo()` **drops** a payload over 249 bytes rather than clamping it, and this is load-bearing:
+`RFM95_BUFFER_TOTAL()` casts to `uint8_t`, so 250 wraps to a total of 0 and 255 wraps to 5 — an
+empty frame and a runt respectively, both of which a peer running this code rejects while the sender
+reports success. Clamping would be worse than dropping, because a truncated-but-well-formed frame is
+undetectable at the far end. `RFM69Socket` has no equivalent guard and needs none: its 61-byte
+ceiling puts the sum nowhere near 256.
+
 ## Tests
 
 Host tests, no radio needed:
@@ -160,7 +167,11 @@ check into the same `#if` was tried as a mutation — the trace binary stayed gr
 binary caught it.
 
 `make -C ArduinoLibs/test rfm95-layout` compiles the header under the host ABI and under
-`-fpack-struct=1`, which is what checks the packing claim above.
+`-fpack-struct=1`. Note which half does the work: deleting `__attribute__((__packed__))` fails 5
+static_asserts under the **default ABI** and **zero** under `-fpack-struct=1`, because that flag packs
+every struct in the translation unit and so reconstructs by flag exactly what the attribute was meant
+to guarantee. The default-ABI compile is what pins the packing; the AVR-proxy compile only confirms
+the asserted offsets match what AVR would produce.
 
 ## Known gaps
 
@@ -170,4 +181,9 @@ binary caught it.
   it would mean taking its **8-bit** address space against `socket_addr_t`'s 16-bit one.
 - **No interrupt-driven receive.** `getMsg()` polls `LoRa.parsePacket()`. DIO0 is wired (GPIO 26) and
   `LoRa.onReceive()` exists, so this is available when polling proves insufficient.
+- **`SPI.begin()` is a no-op if the bus is already up.** The ESP32 core's `SPIClass::begin()` opens
+  with `if (_spi) return;`, so if anything brings up the global `SPI` before `RFM95Socket::setup()`,
+  the explicit pins here are silently discarded. The host suite cannot catch this — `shim/SPI.h`
+  records pins on every call, which is more forgiving than the hardware. Relevant the moment this
+  meets WLED, whose `bus_manager` is also an SPI consumer.
 - **Not integrated into WLED.** This is the library only.

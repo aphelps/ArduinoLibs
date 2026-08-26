@@ -73,6 +73,19 @@ void RFM95Socket::setSPIPins(int _sck, int _miso, int _mosi) {
  *   (sparkx_esp32_lora/pins_arduino.h) redefines SS/MOSI/MISO/SCK to the radio's
  *   pins, so the "default" SPI is already correct there. We do not build with that
  *   variant, so we have to say it.
+ *
+ * KNOWN LIMIT, and it matters for the planned WLED integration. The ESP32 core's
+ * SPIClass::begin() starts with `if (_spi) return;` -- if the global SPI object has
+ * ALREADY been brought up by anything else, the pin arguments here are silently
+ * discarded and the bus keeps whatever pins it was given first. WLED's bus_manager
+ * also brings up SPI, so ordering there is not a detail.
+ *
+ * The host suite does NOT catch this: shim/SPI.h records the pins on every call,
+ * which is more forgiving than the hardware, so the pin-map assertions stay green
+ * in exactly the case that would fail on a board. Flagged in post-PR self-review;
+ * fixing it properly means owning an SPIClass instance and handing it to
+ * LoRa.setSPI() rather than sharing the global, which is a change to make when
+ * there is a second SPI consumer to test against.
  */
 void RFM95Socket::setup() {
   if (radio_ready) return;
@@ -118,6 +131,18 @@ byte *RFM95Socket::initBuffer(byte *data, uint16_t data_size) {
     DEBUG_ERR("RFM95Socket: sndbuf too big, clamping");
     data_size = RFM95_MAX_PACKET;
   }
+  /*
+   * A buffer smaller than the header has no room for a payload at all. Without this the subtraction
+   * below underflows uint16_t -- data_size 0 gives send_data_size 65530 -- and the caller is handed
+   * a send_buffer pointing past the end of its own array along with a size saying 64 KB is
+   * available. Report zero instead, which is the truth.
+   */
+  if (data_size < sizeof (rfm95_socket_hdr_t)) {
+    DEBUG_ERR("RFM95Socket: sndbuf smaller than the header");
+    send_data_size = 0;
+    send_buffer = data;
+    return send_buffer;
+  }
   send_data_size = data_size - sizeof (rfm95_socket_hdr_t);
   send_buffer = data + sizeof (rfm95_socket_hdr_t);
   return send_buffer;
@@ -136,6 +161,32 @@ static void printSocketMsg(const rfm95_socket_msg_t *msg, byte length) {
 
 void RFM95Socket::sendMsgTo(uint16_t address, const byte * data, const byte datalength) {
   if (!radio_ready) return;
+
+  /*
+   * Bounds check, and it is not defensive padding -- without it this function puts MALFORMED FRAMES
+   * ON THE AIR, silently.
+   *
+   * RFM95_BUFFER_TOTAL() casts to uint8_t, and `datalength` is a `byte` because Socket pins it to
+   * one, so 250..255 are all expressible and all wrap:
+   *
+   *   sendMsgTo(..., 250) -> RFM95_BUFFER_TOTAL == 0   -> an EMPTY frame transmitted
+   *   sendMsgTo(..., 255) -> RFM95_BUFFER_TOTAL == 5   -> a 5-byte RUNT frame transmitted
+   *
+   * A runt is exactly what getMsg()'s unconditional length check exists to reject -- so without this
+   * the library's transmit path manufactures the frames its own receive path is defending against,
+   * and a peer running this same code drops them with "runt frame" while the sender reports success.
+   *
+   * RFM69Socket needs no equivalent because RF69_MAX_DATA_LEN is 61 and the sum cannot reach 256.
+   * Here RFM95_MAX_PACKET is exactly 255, which is what makes the overflow reachable.
+   *
+   * Dropped rather than clamped, deliberately: a clamped send would put a well-formed frame on the
+   * air with the tail of the caller's message missing, which the receiver cannot detect. A drop is
+   * loud and loses the same message.
+   */
+  if (datalength > RFM95_MAX_DATA_LEN) {
+    DEBUG_ERR("RFM95Socket: payload over 249B, send dropped");
+    return;
+  }
 
   rfm95_socket_msg_t *msg = (rfm95_socket_msg_t *)headerFromData(data);
 

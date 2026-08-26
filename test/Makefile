@@ -154,11 +154,22 @@ $(BUILD)/rfm95_socket_test_quiet: rfm95_socket_test.cpp $(RFM95_SOURCES) $(RFM95
 	$(CXX) $(CXXFLAGS) -DDEBUG_LEVEL_RFM95SOCKET=1 $(RFM95_INCLUDES) -o $@ $< $(RFM95_SOURCES) $(DEBUG_OBJ)
 
 # Cross-ABI layout check: the header must have the SAME size and the SAME field offsets under the
-# host ABI and under -fpack-struct=1, which is the closest host proxy for AVR's byte-aligned layout.
+# host ABI and under -fpack-struct=1, the closest host proxy for AVR's byte-aligned layout. It is
+# -fsyntax-only and compiles the header alone; the static_asserts in RFM95Socket.h ARE the assertion,
+# so a layout that moves fails the BUILD.
 #
-# This is what turns "packed so an AVR LoRa peer is possible later" from an intention into a checked
-# claim. It is -fsyntax-only and compiles the header alone: the static_asserts in RFM95Socket.h are
-# the assertion, so a layout that moves fails the BUILD rather than a runtime comparison.
+# BE PRECISE ABOUT WHICH HALF DOES THE WORK, because the obvious reading is wrong and was corrected
+# in post-PR self-review. Mutation: delete `__attribute__((__packed__))` from rfm95_socket_hdr_t --
+#
+#   default ABI        -> 5 static_asserts fail   (caught)
+#   -fpack-struct=1    -> 0 failures              (NOT caught)
+#
+# -- because -fpack-struct=1 packs every struct in the translation unit, so it reconstructs by flag
+# exactly what the attribute was supposed to guarantee, and cannot notice the attribute is gone. The
+# DEFAULT-ABI compile is the one that pins the packing; the AVR-proxy compile only confirms the
+# asserted offsets are also what AVR would produce, which is a weaker and largely redundant claim.
+#
+# Kept anyway, but do not read a green -fpack-struct=1 run as evidence the header is packed.
 #
 # Deliberately NOT wired into HMTL/tests/layout/ -- there is no AVR LoRa peer yet, and that would be
 # three edits across a submodule boundary (including the hardcoded GUARDED list in
