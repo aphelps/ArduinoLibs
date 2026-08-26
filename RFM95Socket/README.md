@@ -130,9 +130,9 @@ typedef struct __attribute__((__packed__)) {
 
 Same field set and size as `rfm69_socket_hdr_t`. Packed, with `static_assert`s on the size **and
 every field offset**, so an AVR peer and an ESP32 peer cannot disagree about where the payload
-starts. There is no AVR LoRa node today — that is prophylaxis for one appearing later, and the host
-suite compiles this header a second time under `-fpack-struct=1` (the AVR-layout proxy) to keep the
-claim checked rather than merely intended.
+starts. There is no AVR LoRa node today — that is prophylaxis for one appearing later. The packing
+itself is pinned by those `static_assert`s under the **host ABI**; see the Tests section for why the
+`-fpack-struct=1` compile is a weaker check than it looks.
 
 Deliberately **generic**: LoRa↔RS485/HMTL bridging is planned, so nothing radio-specific (RSSI, SNR,
 spreading factor) goes on the wire, where a bridge would have to strip it. Link quality is available
