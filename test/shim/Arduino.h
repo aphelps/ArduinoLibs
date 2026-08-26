@@ -103,6 +103,12 @@ inline void attachInterrupt(int irq, test_isr_t fn, int) {
 inline void noInterrupts() {}
 inline void interrupts() {}
 
+// delay() is a no-op here rather than a real sleep: the only caller reachable from these tests is
+// debug_err_state() in Debug.cpp, which is an infinite flash loop. A test that reached it would hang
+// either way -- this just means it hangs without also taking 250 ms per iteration. (RFM95Socket
+// deliberately does not call it; see its initBuffer.)
+inline void delay(unsigned long) {}
+
 // ---------------------------------------------------------------------------------------------
 // HardwareSerial as a pair of byte queues
 // ---------------------------------------------------------------------------------------------
