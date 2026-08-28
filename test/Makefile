@@ -76,12 +76,52 @@ MPR121_INCLUDES := -I shim -I $(ROOT)/MPR121 -I $(ROOT)/Debug
 #                         verified by mutation that reverting that fix fails ONLY here.
 MPR121_TESTS    := mpr121_test mpr121_test_trace
 
-BINARIES := $(addprefix $(BUILD)/,$(TESTS) $(PIXEL_TESTS) $(MPR121_TESTS))
+# RFM95Socket, on its own include set and its own shims (LoRa.h, SPI.h).
+#
+# Debug.cpp IS linked here, unlike every other suite in this file. RFM95Socket.cpp self-defaults
+# DEBUG_LEVEL to DEBUG_TRACE when the consumer sets none -- so the configuration that ships for a
+# caller that says nothing is the one with tracing compiled IN, and its printSocketMsg() calls
+# print_hex_buffer(), which lives in Debug.cpp. Stubbing that instead would have meant the tested
+# build was not the shipped one.
+RFM95_SOURCES  := $(ROOT)/RFM95Socket/RFM95Socket.cpp
+#
+# The HEADER is a prerequisite, not just the .cpp. Everything this suite pins hardest -- the pin
+# map, the packed layout, the size ceilings -- lives in RFM95Socket.h as macros and structs, so a
+# build that does not depend on it will happily re-run a stale binary after the header changed.
+# Found by mutation: changing RFM95_SPARKFUN_1CH_RESET from -1 to SparkFun's 5 left the suite
+# GREEN until a clean rebuild, which is the precise failure a test suite must not have.
+RFM95_HEADERS  := $(ROOT)/RFM95Socket/RFM95Socket.h $(ROOT)/Socket/Socket.h
+RFM95_INCLUDES := -I shim -I $(ROOT)/RFM95Socket -I $(ROOT)/Socket -I $(ROOT)/Debug
+#
+# Debug.cpp is compiled to its OWN object rather than added to RFM95_SOURCES, because its debug
+# level has to be set independently of RFM95Socket.cpp's. Putting it on the same command line would
+# mean one -DDEBUG_LEVEL for both, which collides with RFM95Socket.cpp's own
+# `#ifdef DEBUG_LEVEL_RFM95SOCKET / #define DEBUG_LEVEL` (macro redefinition) and would make the
+# quiet variant below impossible to express. Built at DEBUG_TRACE so print_hex_buffer() actually
+# formats bytes -- at no level its body compiles away to an empty loop, and linking that would mean
+# the trace build's frame-tracing was exercised only as far as the call instruction.
+DEBUG_OBJ      := $(BUILD)/debug_trace.o
+#
+# Built TWICE, for the reason the suite exists:
+#
+#   rfm95_socket_test        -- consumer sets nothing, so DEBUG_LEVEL is DEBUG_TRACE. The shipping
+#                               default, and the configuration in which the frame-tracing exists.
+#   rfm95_socket_test_quiet  -- DEBUG_LEVEL_RFM95SOCKET=DEBUG_ERROR, tracing compiled out.
+#
+# The second binary is not symmetry, and this was checked rather than assumed. RFM69Socket's
+# runt-frame length check sits inside `#if DEBUG_LEVEL == DEBUG_TRACE`, so it does not exist in the
+# build that ships. Moving RFM95Socket's check into the same #if was tried as a mutation: the trace
+# binary stayed GREEN (0 failures) and only the quiet binary caught it (3 failures). So a
+# debug-gated safety check is invisible to a single-configuration suite, and this second build is
+# the only thing standing between us and repeating that defect.
+RFM95_TESTS    := rfm95_socket_test rfm95_socket_test_quiet
+
+BINARIES := $(addprefix $(BUILD)/,$(TESTS) $(PIXEL_TESTS) $(MPR121_TESTS) $(RFM95_TESTS))
 
 .PHONY: all test clean
 all: test
 
-test: $(BINARIES)
+test: $(BINARIES) rfm95-layout
 	@rc=0; for t in $(BINARIES); do \
 	  echo "-- $$(basename $$t) --"; \
 	  $$t || rc=1; \
@@ -103,6 +143,43 @@ $(BUILD)/mpr121_test: mpr121_test.cpp $(MPR121_SOURCES) shim/Arduino.h shim/Wire
 
 $(BUILD)/mpr121_test_trace: mpr121_test.cpp $(MPR121_SOURCES) shim/Arduino.h shim/Wire.h | $(BUILD)
 	$(CXX) $(CXXFLAGS) -DDEBUG_LEVEL_MPR121=5 $(MPR121_INCLUDES) -o $@ $< $(MPR121_SOURCES)
+
+$(DEBUG_OBJ): $(ROOT)/Debug/Debug.cpp $(ROOT)/Debug/Debug.h shim/Arduino.h | $(BUILD)
+	$(CXX) $(CXXFLAGS) -DDEBUG_LEVEL=5 -I shim -I $(ROOT)/Debug -c -o $@ $<
+
+$(BUILD)/rfm95_socket_test: rfm95_socket_test.cpp $(RFM95_SOURCES) $(RFM95_HEADERS) $(DEBUG_OBJ) shim/Arduino.h shim/LoRa.h shim/SPI.h | $(BUILD)
+	$(CXX) $(CXXFLAGS) $(RFM95_INCLUDES) -o $@ $< $(RFM95_SOURCES) $(DEBUG_OBJ)
+
+$(BUILD)/rfm95_socket_test_quiet: rfm95_socket_test.cpp $(RFM95_SOURCES) $(RFM95_HEADERS) $(DEBUG_OBJ) shim/Arduino.h shim/LoRa.h shim/SPI.h | $(BUILD)
+	$(CXX) $(CXXFLAGS) -DDEBUG_LEVEL_RFM95SOCKET=1 $(RFM95_INCLUDES) -o $@ $< $(RFM95_SOURCES) $(DEBUG_OBJ)
+
+# Cross-ABI layout check: the header must have the SAME size and the SAME field offsets under the
+# host ABI and under -fpack-struct=1, the closest host proxy for AVR's byte-aligned layout. It is
+# -fsyntax-only and compiles the header alone; the static_asserts in RFM95Socket.h ARE the assertion,
+# so a layout that moves fails the BUILD.
+#
+# BE PRECISE ABOUT WHICH HALF DOES THE WORK, because the obvious reading is wrong and was corrected
+# in post-PR self-review. Mutation: delete `__attribute__((__packed__))` from rfm95_socket_hdr_t --
+#
+#   default ABI        -> 5 static_asserts fail   (caught)
+#   -fpack-struct=1    -> 0 failures              (NOT caught)
+#
+# -- because -fpack-struct=1 packs every struct in the translation unit, so it reconstructs by flag
+# exactly what the attribute was supposed to guarantee, and cannot notice the attribute is gone. The
+# DEFAULT-ABI compile is the one that pins the packing; the AVR-proxy compile only confirms the
+# asserted offsets are also what AVR would produce, which is a weaker and largely redundant claim.
+#
+# Kept anyway, but do not read a green -fpack-struct=1 run as evidence the header is packed.
+#
+# Deliberately NOT wired into HMTL/tests/layout/ -- there is no AVR LoRa peer yet, and that would be
+# three edits across a submodule boundary (including the hardcoded GUARDED list in
+# negative_control.py) to cover a node that does not exist.
+.PHONY: rfm95-layout
+rfm95-layout: $(RFM95_HEADERS)
+	@echo "-- rfm95 header layout: host ABI --"
+	$(CXX) -std=c++11 -Wall -Wextra -fsyntax-only $(RFM95_INCLUDES) -include Arduino.h -include Socket.h $(ROOT)/RFM95Socket/RFM95Socket.h
+	@echo "-- rfm95 header layout: -fpack-struct=1 (AVR proxy) --"
+	$(CXX) -std=c++11 -Wall -Wextra -fsyntax-only -fpack-struct=1 $(RFM95_INCLUDES) -include Arduino.h -include Socket.h $(ROOT)/RFM95Socket/RFM95Socket.h
 
 $(BUILD):
 	@mkdir -p $(BUILD)

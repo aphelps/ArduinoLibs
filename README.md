@@ -47,7 +47,7 @@ Most libraries print through the `Debug` macros, gated by a compile-time `DEBUG_
 ## The Socket family (messaging transports)
 
 `Socket/` defines an abstract **`Socket`** base class — a common message-passing API — and
-three concrete transports implement it, so higher-level code can send/receive addressed
+four concrete transports implement it, so higher-level code can send/receive addressed
 messages without caring which radio/wire carries them:
 
 | Library | Transport | Underlying driver |
@@ -55,9 +55,10 @@ messages without caring which radio/wire carries them:
 | `Socket` | abstract base (API only, header-only) | — |
 | `RS485Utils` (`RS485Socket`) | RS485 two-wire bus | Nick Gammon's `RS485_non_blocking` |
 | `RFM69Socket` | RFM69 sub-GHz radio | LowPowerLab `RFM69` |
+| `RFM95Socket` | RFM95 LoRa radio (915 MHz) | `sandeepmistry/arduino-LoRa` |
 | `XBeeSocket` | XBee / ZigBee radio | `XBee` |
 
-All three declare `: public Socket` and override the same virtual API:
+All four declare `: public Socket` and override the same virtual API:
 
 ```cpp
 virtual void          setup();
@@ -74,12 +75,21 @@ virtual socket_addr_t destFromData(void *data);
 
 Addresses are `socket_addr_t`; `SOCKET_ADDR_ANY` is the broadcast address and
 `SOCKET_ADDR_INVALID` the sentinel. Each transport adds its own on-wire header struct
-(`rs485_socket_hdr_t` / `rfm69_socket_hdr_t` / `xbee_socket_hdr_t`), a `*_BUFFER_TOTAL(n)`
-macro for sizing the send buffer, and (for RFM69/XBee) a `*_DATA_LENGTH(n)` for the inverse.
-Because they share the interface, a device can swap RS485 for RFM69/XBee with minimal code change.
+(`rs485_socket_hdr_t` / `rfm69_socket_hdr_t` / `rfm95_socket_hdr_t` / `xbee_socket_hdr_t`), a
+`*_BUFFER_TOTAL(n)` macro for sizing the send buffer, and (for RFM69/RFM95/XBee) a `*_DATA_LENGTH(n)`
+for the inverse. Because they share the interface, a device can swap one transport for another with
+minimal code change.
 
-**The RS485, RFM69 and XBee header structs are `__attribute__((__packed__))` with `static_assert`s
-pinning their size and every field offset — 7, 6 and 5 bytes respectively.** This is a correctness
+`RFM95Socket` differs from the others in one way worth knowing before reading its code: **LoRa has no
+node addressing of its own.** RS485 frames carry a destination, and the RFM69 driver owns both a node
+address and a broadcast address; arduino-LoRa is a raw packet pipe, so every node on the frequency
+receives every packet and `rfm95_socket_hdr_t.address` plus the software filter in `getMsg()` is the
+*entire* addressing mechanism. It is also the only transport here with **no encryption** — the RFM69
+has AES in hardware and `RFM69Socket` uses it; the RFM95 does not, and no software cipher is applied.
+See `RFM95Socket/README.md`.
+
+**The RS485, RFM69, RFM95 and XBee header structs are `__attribute__((__packed__))` with
+`static_assert`s pinning their size and every field offset — 7, 6, 6 and 5 bytes respectively.** This is a correctness
 requirement, not
 a space optimisation. `sizeof(hdr)` is what positions the payload at both ends of the link, and these
 structs mix `byte` with 16-bit `socket_addr_t`, so an unpacked declaration is one size on AVR
