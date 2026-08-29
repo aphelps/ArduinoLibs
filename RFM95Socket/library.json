@@ -1,0 +1,28 @@
+{
+    "name": "RFM95Socket",
+    "keywords": "lora, rfm95, sx1276, socket, messaging, transport",
+    "description": "Socket-like API for the RFM95 (LoRa) radio, layered on sandeepmistry/arduino-LoRa. ESP32-only: the pin defaults target the SparkFun ESP32 LoRa 1-CH Gateway (SCK 14 / MISO 12 / MOSI 13 / CS 16 / DIO0 26; RESET is not wired to the ESP32, pass -1). Unlike RFM69Socket the radio has no node addressing of its own, so rfm95_socket_hdr_t plus the software filter in getMsg() is the entire addressing mechanism. UNENCRYPTED — the RFM95 has no AES in hardware.",
+    "authors":
+    {
+        "name": "Adam Phelps",
+        "email": "amp@ampworksstudio.com"
+    },
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/AMPWorks/ArduinoLibs.git"
+    },
+    "dependencies":
+    [
+        { "name": "Socket", "frameworks": "arduino" },
+        { "name": "Debug", "frameworks": "arduino" },
+        { "name": "LoRa", "version": "sandeepmistry/LoRa@0.8.0", "frameworks": "arduino" }
+    ],
+    "include": "RFM95Socket",
+    "frameworks": "arduino",
+    "platforms": ["espressif32"],
+    "build":
+    {
+        "srcFilter": ["+<*.c>", "+<*.cpp>", "-<examples/>"]
+    }
+}
