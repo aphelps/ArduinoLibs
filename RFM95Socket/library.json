@@ -16,7 +16,7 @@
     [
         { "name": "Socket", "frameworks": "arduino" },
         { "name": "Debug", "frameworks": "arduino" },
-        { "name": "LoRa", "version": "sandeepmistry/LoRa@0.8.0", "frameworks": "arduino" }
+        { "owner": "sandeepmistry", "name": "LoRa", "version": "0.8.0", "frameworks": "arduino" }
     ],
     "include": "RFM95Socket",
     "frameworks": "arduino",
